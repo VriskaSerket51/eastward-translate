@@ -9,6 +9,13 @@
     "lint": "eslint -c .eslintrc.json ./src/**/**/*.{ts,tsx} --fix",
     "preview": "vite preview"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VriskaSerket51/eastward-kr.git"
+  },
+  "author": "IREVES",
+  "license": "GPL-3.0-or-later",
+  "description": "Eastward kr translation WEB",
   "dependencies": {
     "@nextui-org/button": "2.0.37",
     "@nextui-org/code": "2.0.32",
