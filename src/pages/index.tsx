@@ -1,11 +1,11 @@
 import { useAsync } from "react-use";
 import { Button } from "@nextui-org/button";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import DefaultLayout from "@/layouts/default";
 
 export default function IndexPage() {
-  const { error: error1, value: paths } = useAsync(async () => {
+  const { error: fetchError, value: paths } = useAsync(async () => {
     const response = await fetch("http://localhost:3000/sq/names");
     const names = (await response.json()) as string[];
 
@@ -18,10 +18,10 @@ export default function IndexPage() {
 
   return (
     <DefaultLayout>
-      <p>{error1?.message}</p>
+      <p>{fetchError?.message}</p>
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-1/4 h-full overflow-auto border-2 p-1">
-          {paths &&
+          {(paths &&
             paths.map((path) => (
               <Button
                 key={path}
@@ -46,10 +46,15 @@ export default function IndexPage() {
               >
                 {path}
               </Button>
-            ))}
+            ))) || <p>Loading...</p>}
         </div>
         <div className="absolute left-1/4 w-3/4 h-full overflow-auto border-2 p-1 whitespace-pre break-words">
           {loading && <p>Loading...</p>}
+          {path && (
+            <p className="sticky top-0 backdrop-blur-sm font-bold py-2">
+              {path}
+            </p>
+          )}
           {script && buildSQ(script, path)}
           {csv && buildText(csv, path)}
         </div>
@@ -159,13 +164,7 @@ function buildSQ(obj: any, path: string, depth?: number, meta?: any) {
   meta = meta ?? { index: 0 };
   const { index } = meta;
 
-  if (type == "root") {
-    output.push(
-      <p key={`root-${depth}-${index}`} className="font-bold pb-2">
-        {obj.file}
-      </p>
-    );
-  } else if (type == "cutscene") {
+  if (type == "cutscene") {
     output.push(
       <p key={`cutscene-${depth}-${index}`}>{"\t".repeat(depth)}CUTSCENE</p>
     );
