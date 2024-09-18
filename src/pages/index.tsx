@@ -1,6 +1,6 @@
 import { useAsync } from "react-use";
 import { Button } from "@nextui-org/button";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 
 import DefaultLayout from "@/layouts/default";
 
