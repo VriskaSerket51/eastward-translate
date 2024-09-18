@@ -4,9 +4,11 @@ import { ReactNode, useState } from "react";
 
 import DefaultLayout from "@/layouts/default";
 
+const host = location.hostname;
+
 export default function IndexPage() {
   const { error: fetchError, value: paths } = useAsync(async () => {
-    const response = await fetch("http://localhost:3000/sq/names");
+    const response = await fetch(`http://${host}:3000/sq/names`);
     const names = (await response.json()) as string[];
 
     return names.filter((name) => !name.startsWith("farm"));
@@ -33,7 +35,7 @@ export default function IndexPage() {
                   setCsv(undefined);
 
                   const response = await fetch(
-                    "http://localhost:3000/sq/value?path=" + path
+                    `http://${host}:3000/sq/value?path=${path}`
                   );
 
                   const { script, csv } = await response.json();
