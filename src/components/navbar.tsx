@@ -5,10 +5,13 @@ import {
   NavbarContent,
   NavbarItem,
   NavbarMenuToggle,
+  NavbarMenu,
+  NavbarMenuItem,
 } from "@nextui-org/navbar";
 
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo } from "@/components/icons";
+import { siteConfig } from "@/config/site";
 
 export const Navbar = () => {
   return (
@@ -24,6 +27,19 @@ export const Navbar = () => {
             <p className="font-bold text-inherit">Eastward Translate</p>
           </Link>
         </NavbarBrand>
+        <div className="hidden lg:flex gap-4 justify-start ml-2">
+          {siteConfig.navItems.map((item) => (
+            <NavbarItem key={item.href}>
+              <Link
+                className="data-[active=true]:text-primary data-[active=true]:font-medium"
+                color="foreground"
+                href={item.href}
+              >
+                {item.label}
+              </Link>
+            </NavbarItem>
+          ))}
+        </div>
       </NavbarContent>
 
       <NavbarContent
@@ -39,6 +55,18 @@ export const Navbar = () => {
         <ThemeSwitch />
         <NavbarMenuToggle />
       </NavbarContent>
+
+      <NavbarMenu>
+        <div className="mx-4 mt-2 flex flex-col gap-2">
+          {siteConfig.navMenuItems.map((item, index) => (
+            <NavbarMenuItem key={`${item}-${index}`}>
+              <Link color="foreground" href={item.href} size="lg">
+                {item.label}
+              </Link>
+            </NavbarMenuItem>
+          ))}
+        </div>
+      </NavbarMenu>
     </NextUINavbar>
   );
 };

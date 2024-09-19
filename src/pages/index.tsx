@@ -3,6 +3,7 @@ import { Button } from "@nextui-org/button";
 import { ReactNode, useState } from "react";
 
 import DefaultLayout from "@/layouts/default";
+import { getProfileName } from "@/util/name";
 
 const host = location.hostname;
 
@@ -117,6 +118,7 @@ function ContentEditable(props: Props) {
                     lang: "ko",
                     key: tKey,
                     value: text,
+                    editor: getProfileName(),
                   }),
                 }
               );
