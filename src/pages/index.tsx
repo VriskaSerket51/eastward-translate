@@ -107,7 +107,7 @@ function ContentEditable(props: Props) {
             if (text != origin) {
               document.getElementById(key)!.innerText = "⌛";
               const response = await fetch(
-                "http://localhost:3000/sq/translate",
+                `http://${host}:3000/sq/translate`,
                 {
                   method: "POST",
                   headers: {
