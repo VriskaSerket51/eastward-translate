@@ -106,22 +106,19 @@ function ContentEditable(props: Props) {
             e.preventDefault();
             if (text != origin) {
               document.getElementById(key)!.innerText = "⌛";
-              const response = await fetch(
-                `http://${host}:3000/sq/translate`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    path,
-                    lang: "ko",
-                    key: tKey,
-                    value: text,
-                    editor: getProfileName(),
-                  }),
-                }
-              );
+              const response = await fetch(`http://${host}:3000/sq/translate`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  path,
+                  lang: "ko",
+                  key: tKey,
+                  value: text.replace(/\\n/g, "\n"),
+                  editor: getProfileName(),
+                }),
+              });
 
               if (response.ok) {
                 obj.ko = text;
