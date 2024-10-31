@@ -1,5 +1,5 @@
 import { useAsync } from "react-use";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardFooter } from "@nextui-org/card";
 import { useSearchParams } from "react-router-dom";
 import { Divider } from "@nextui-org/divider";
@@ -56,7 +56,7 @@ export default function HistoryPage() {
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-2/5 h-full overflow-auto border-2 p-1">
           {(history &&
-            history.map(({ path, editedDate, editor }, i) => (
+            history.map(({ path, editedDate, editor }) => (
               <Card
                 key={path}
                 isPressable
