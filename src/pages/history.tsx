@@ -1,29 +1,47 @@
 import { useAsync } from "react-use";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardHeader, CardFooter } from "@nextui-org/card";
+import { useSearchParams } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 
-const host = location.hostname;
+const HOST = import.meta.env.VITE_API_HOST || "http://localhost:3000";
 
 type History = {
   path: string;
-  key: string;
   editor: string;
   editedDate: number;
 };
-type Diff = { editor: string | null; value: string };
+
+type Diff = {
+  key: string;
+  value: string;
+  editedDate: number;
+  editor: string | null;
+};
 
 export default function HistoryPage() {
   const { error: fetchError, value: history } = useAsync(async () => {
-    const response = await fetch(`http://${host}:3000/sq/history`);
+    const response = await fetch(`${HOST}/sq/history`);
     const history = (await response.json()) as History[];
 
     return history;
   }, []);
   const [loading, setLoading] = useState(false);
-  const [path, setPath] = useState("");
-  const [diff, setDiff] = useState<Diff[] | null>(null);
+  const [diff, setDiff] = useState<{ [key: string]: Diff[] }>({});
+  const [searchParams, setSearchParams] = useSearchParams();
+  const path = searchParams.get("path");
+
+  useMemo(async () => {
+    setLoading(true);
+
+    const response = await fetch(`${HOST}/sq/diff?path=${path}`);
+
+    const diff = await response.json();
+
+    setDiff(diff);
+    setLoading(false);
+  }, [path]);
 
   return (
     <DefaultLayout>
@@ -31,25 +49,13 @@ export default function HistoryPage() {
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-2/5 h-full overflow-auto border-2 p-1">
           {(history &&
-            history.map(({ path, key, editedDate, editor }, i) => (
+            history.map(({ path, editedDate, editor }, i) => (
               <Card
                 key={i}
                 isPressable
-                className="block my-1 w-[400px]"
+                className="block my-1"
                 onPress={async () => {
-                  setLoading(true);
-                  setPath("");
-                  setDiff(null);
-
-                  const response = await fetch(
-                    `http://${host}:3000/sq/diff?path=${path}&key=${key}&editedDate=${editedDate}`
-                  );
-
-                  const diff = await response.json();
-
-                  setDiff(diff);
-                  setPath(path);
-                  setLoading(false);
+                  setSearchParams({ path });
                 }}
               >
                 <CardHeader>
@@ -57,8 +63,8 @@ export default function HistoryPage() {
                 </CardHeader>
 
                 {/* <Divider /> */}
-                <CardFooter className="flex flex-row justify-between w-full">
-                  <p>By {editor}</p>
+                <CardFooter className="flex flex-col items-start w-full">
+                  <p>Last updated by {editor}</p>
                   <p>at {new Date(editedDate).toISOString()}</p>
                 </CardFooter>
               </Card>
@@ -72,15 +78,22 @@ export default function HistoryPage() {
             </p>
           )}
           {diff &&
-            diff.map(({ editor, value }, i) => (
-              <div key={value} className="py-2">
-                <p className="font-bold">
-                  {i == 0 ? "Edit by " : "Origin by "}
-                  {editor || "INIT"}
-                </p>
-                <p>{value}</p>
-              </div>
-            ))}
+            Object.entries(diff).map(([key, diff]) => {
+              return (
+                <div key={`${key}`} className="py-6">
+                  {diff.map(({ value, editor, editedDate }) => {
+                    return (
+                      <div key={`${key}-${editedDate}`} className="py-2">
+                        <p className="font-bold">
+                          {editor ? `Edited by ${editor}` : "Original"}
+                        </p>
+                        <p>{value}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
         </div>
       </section>
     </DefaultLayout>
