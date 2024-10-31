@@ -1,12 +1,26 @@
 import { useAsync } from "react-use";
 import { Button } from "@nextui-org/button";
-import { ReactNode, useMemo, useState } from "react";
+import {
+  memo,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useSearchParams } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 import { getProfileName } from "@/util/name";
 
 const HOST = import.meta.env.VITE_API_HOST || "http://localhost:3000";
+
+type Translation = {
+  obj: any;
+  value: string;
+};
+
+type OnContentChange = (obj: any, key: string, value: string | null) => void;
 
 export default function IndexPage() {
   const { error: fetchError, value: paths } = useAsync(async () => {
@@ -20,19 +34,99 @@ export default function IndexPage() {
     script: undefined,
     csv: undefined,
   });
+  const [status, setStatus] = useState("✅");
   const [searchParams, setSearchParams] = useSearchParams();
   const path = searchParams.get("path");
 
-  useMemo(async () => {
-    setLoading(true);
+  const translationsRef = useRef<{
+    [key: string]: Translation;
+  }>({});
+  const pathRef = useRef(path);
 
-    const response = await fetch(`${HOST}/sq/value?path=${path}`);
-
-    const data = await response.json();
-
-    setData(data);
-    setLoading(false);
+  useEffect(() => {
+    pathRef.current = path;
   }, [path]);
+
+  useEffect(() => {
+    const callback = async (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key == "s") {
+        e.preventDefault();
+
+        setStatus("⌛");
+        const response = await fetch(`${HOST}/sq/translate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            path,
+            translations: Object.entries(translationsRef.current).map(
+              ([key, { value }]) => {
+                return {
+                  key,
+                  value: value.replace(/\\n/g, "\n"),
+                };
+              },
+            ),
+            editor: getProfileName(),
+          }),
+        });
+
+        if (response.ok) {
+          Object.values(translationsRef.current).forEach(({ obj, value }) => {
+            obj.ko = value;
+          });
+          translationsRef.current = {};
+          setStatus("✅");
+        } else {
+          setStatus("❗");
+        }
+      }
+    };
+
+    document.addEventListener("keydown", callback);
+
+    return () => {
+      document.removeEventListener("keydown", callback);
+    };
+  }, [pathRef.current]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      translationsRef.current = {};
+      setStatus("✅");
+
+      const response = await fetch(`${HOST}/sq/value?path=${path}`);
+
+      const data = await response.json();
+
+      setData(data);
+      setLoading(false);
+    };
+
+    if (path) {
+      fetchData();
+    }
+  }, [path]);
+
+  const onContentChange = useCallback(
+    (obj: any, key: string, value: string | null) => {
+      if (value === null) {
+        delete translationsRef.current[key];
+      } else {
+        translationsRef.current[key] = {
+          obj,
+          value,
+        };
+      }
+      // 상태 업데이트 최소화
+      const hasTranslations = Object.keys(translationsRef.current).length > 0;
+
+      setStatus(hasTranslations ? "❌" : "✅");
+    },
+    [],
+  );
 
   return (
     <DefaultLayout>
@@ -44,7 +138,7 @@ export default function IndexPage() {
               <Button
                 key={path}
                 className="block my-1"
-                onClick={async () => {
+                onClick={() => {
                   setSearchParams({ path });
                 }}
               >
@@ -58,11 +152,11 @@ export default function IndexPage() {
             <>
               {path && (
                 <p className="sticky top-0 backdrop-blur-sm font-bold py-2">
-                  {path}
+                  {status} {path}
                 </p>
               )}
-              {path && data.script && buildSQ(data.script, path)}
-              {path && data.csv && buildText(data.csv, path)}
+              {path && data.script && buildSQ(data.script, onContentChange)}
+              {path && data.csv && buildText(data.csv, onContentChange)}
             </>
           )}
         </div>
@@ -72,66 +166,31 @@ export default function IndexPage() {
 }
 
 type Props = {
-  index: number;
-  id: string;
   obj: any;
-  tKey: string;
-  path: string;
+  _key: string;
   depth: number;
+  onContentChange: OnContentChange;
 };
 
-function ContentEditable(props: Props) {
-  const { index, id, obj, tKey, path, depth } = props;
+const ContentEditable = memo(function ContentEditable(props: Props) {
+  const { obj, _key, depth, onContentChange } = props;
 
   return (
     <div style={{ paddingLeft: depth * 40 + 5 }}>
-      <span id={`${id}-${index}`}>✅</span>
+      <span>{"> "}</span>
       <span
         contentEditable
         suppressContentEditableWarning
         role="presentation"
         onInput={(e) => {
-          const key = `${id}-${index}`;
           const text = (e.target as HTMLSpanElement).innerText;
 
           const origin = obj.ko?.replace(/\n/g, "\\n") ?? "미번역";
 
           if (text != origin) {
-            document.getElementById(key)!.innerText = "❌";
+            onContentChange(obj, _key, text);
           } else {
-            document.getElementById(key)!.innerText = "✅";
-          }
-        }}
-        onKeyDown={async (e) => {
-          const key = `${id}-${index}`;
-          const text = (e.target as HTMLSpanElement).innerText;
-          const origin = obj.ko?.replace(/\n/g, "\\n") ?? "미번역";
-
-          if (e.ctrlKey && e.key == "s") {
-            e.preventDefault();
-            if (text != origin) {
-              document.getElementById(key)!.innerText = "⌛";
-              const response = await fetch(`${HOST}/sq/translate`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  path,
-                  lang: "ko",
-                  key: tKey,
-                  value: text.replace(/\\n/g, "\n"),
-                  editor: getProfileName(),
-                }),
-              });
-
-              if (response.ok) {
-                obj.ko = text;
-                document.getElementById(key)!.innerText = "✅";
-              } else {
-                document.getElementById(key)!.innerText = "❗";
-              }
-            }
+            onContentChange(obj, _key, null);
           }
         }}
       >
@@ -139,28 +198,31 @@ function ContentEditable(props: Props) {
       </span>
     </div>
   );
-}
+});
 
-function buildText(obj: any, path: string) {
+function buildText(obj: any, onContentChange: OnContentChange) {
   return Object.entries<any>(obj).map(([key, value], i) => {
     return (
       <div key={`csv-${i}`} className="py-2">
         <p className="pb-1 font-bold">{key}</p>
         <p> {value.en.replace(/\n/g, "\\n")}</p>
         <ContentEditable
+          _key={key}
           depth={0}
-          id="csv"
-          index={i}
           obj={value}
-          path={path}
-          tKey={key}
+          onContentChange={onContentChange}
         />
       </div>
     );
   });
 }
 
-function buildSQ(obj: any, path: string, depth?: number, meta?: any) {
+function buildSQ(
+  obj: any,
+  onContentChange: OnContentChange,
+  depth?: number,
+  meta?: any,
+) {
   const { type, children, args } = obj;
 
   const output: ReactNode[] = [];
@@ -217,12 +279,10 @@ function buildSQ(obj: any, path: string, depth?: number, meta?: any) {
           {obj["zh-CN"].replace(/\n/g, "\\n")}
         </p>
         <ContentEditable
+          _key={obj.directive}
           depth={depth}
-          id="say"
-          index={index}
           obj={obj}
-          path={path}
-          tKey={obj.directive}
+          onContentChange={onContentChange}
         />
       </div>,
     );
@@ -233,7 +293,7 @@ function buildSQ(obj: any, path: string, depth?: number, meta?: any) {
   if (children && Array.isArray(children)) {
     for (const child of children) {
       meta.index++;
-      output.push(...buildSQ(child, path, depth, meta));
+      output.push(...buildSQ(child, onContentChange, depth, meta));
     }
   }
 
