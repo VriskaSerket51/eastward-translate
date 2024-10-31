@@ -1,5 +1,6 @@
 import { useAsync } from "react-use";
 import { Button } from "@nextui-org/button";
+import { CheckboxGroup, Checkbox } from "@nextui-org/checkbox";
 import {
   memo,
   ReactNode,
@@ -34,6 +35,7 @@ export default function IndexPage() {
     script: undefined,
     csv: undefined,
   });
+  const [filter, setFilter] = useState(["en", "ja", "zh-CN", "ko"]);
   const [status, setStatus] = useState("✅");
   const [searchParams, setSearchParams] = useSearchParams();
   const path = searchParams.get("path");
@@ -151,11 +153,27 @@ export default function IndexPage() {
           {!loading && (
             <>
               {path && (
-                <p className="sticky top-0 backdrop-blur-sm font-bold py-2">
-                  {status} {path}
-                </p>
+                <div className="sticky top-0 backdrop-blur-sm font-bold py-2">
+                  <p>
+                    {status} {path}
+                  </p>
+                  <CheckboxGroup
+                    className="pl-2"
+                    orientation="horizontal"
+                    size="sm"
+                    value={filter}
+                    onValueChange={setFilter}
+                  >
+                    <Checkbox value="en">영어</Checkbox>
+                    <Checkbox value="ja">일본어</Checkbox>
+                    <Checkbox value="zh-CN">중국어</Checkbox>
+                    <Checkbox value="ko">한국어</Checkbox>
+                  </CheckboxGroup>
+                </div>
               )}
-              {path && data.script && buildSQ(data.script, onContentChange)}
+              {path &&
+                data.script &&
+                buildSQ(data.script, filter, onContentChange)}
               {path && data.csv && buildText(data.csv, onContentChange)}
             </>
           )}
@@ -219,6 +237,7 @@ function buildText(obj: any, onContentChange: OnContentChange) {
 
 function buildSQ(
   obj: any,
+  filter: string[],
   onContentChange: OnContentChange,
   depth?: number,
   meta?: any,
@@ -269,21 +288,29 @@ function buildSQ(
         <p className="pb-1 font-bold" style={{ paddingLeft: depth * 40 }}>
           {obj.chara}
         </p>
-        <p style={{ paddingLeft: depth * 40 + 5 }}>
-          {obj.en.replace(/\n/g, "\\n")}
-        </p>
-        <p style={{ paddingLeft: depth * 40 + 5 }}>
-          {obj.ja.replace(/\n/g, "\\n")}
-        </p>
-        <p style={{ paddingLeft: depth * 40 + 5 }}>
-          {obj["zh-CN"].replace(/\n/g, "\\n")}
-        </p>
-        <ContentEditable
-          _key={obj.directive}
-          depth={depth}
-          obj={obj}
-          onContentChange={onContentChange}
-        />
+        {filter.includes("en") && (
+          <p style={{ paddingLeft: depth * 40 + 5 }}>
+            {obj.en.replace(/\n/g, "\\n")}
+          </p>
+        )}
+        {filter.includes("ja") && (
+          <p style={{ paddingLeft: depth * 40 + 5 }}>
+            {obj.ja.replace(/\n/g, "\\n")}
+          </p>
+        )}
+        {filter.includes("zh-CN") && (
+          <p style={{ paddingLeft: depth * 40 + 5 }}>
+            {obj["zh-CN"].replace(/\n/g, "\\n")}
+          </p>
+        )}
+        {filter.includes("ko") && (
+          <ContentEditable
+            _key={obj.directive}
+            depth={depth}
+            obj={obj}
+            onContentChange={onContentChange}
+          />
+        )}
       </div>,
     );
   } else {
@@ -293,7 +320,7 @@ function buildSQ(
   if (children && Array.isArray(children)) {
     for (const child of children) {
       meta.index++;
-      output.push(...buildSQ(child, onContentChange, depth, meta));
+      output.push(...buildSQ(child, filter, onContentChange, depth, meta));
     }
   }
 
