@@ -1,23 +1,38 @@
 import { useAsync } from "react-use";
 import { Button } from "@nextui-org/button";
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 import { getProfileName } from "@/util/name";
 
-const host = location.hostname;
+const HOST = import.meta.env.VITE_API_HOST || "http://localhost:3000";
 
 export default function IndexPage() {
   const { error: fetchError, value: paths } = useAsync(async () => {
-    const response = await fetch(`http://${host}:3000/sq/names`);
+    const response = await fetch(`${HOST}/sq/names`);
     const names = (await response.json()) as string[];
 
     return names.filter((name) => !name.startsWith("farm"));
   }, []);
   const [loading, setLoading] = useState(false);
-  const [path, setPath] = useState("");
-  const [script, setScript] = useState<any>();
-  const [csv, setCsv] = useState<any>();
+  const [data, setData] = useState<{ script: any; csv: any }>({
+    script: undefined,
+    csv: undefined,
+  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const path = searchParams.get("path");
+
+  useMemo(async () => {
+    setLoading(true);
+
+    const response = await fetch(`${HOST}/sq/value?path=${path}`);
+
+    const data = await response.json();
+
+    setData(data);
+    setLoading(false);
+  }, [path]);
 
   return (
     <DefaultLayout>
@@ -30,21 +45,7 @@ export default function IndexPage() {
                 key={path}
                 className="block my-1"
                 onClick={async () => {
-                  setLoading(true);
-                  setPath("");
-                  setScript(undefined);
-                  setCsv(undefined);
-
-                  const response = await fetch(
-                    `http://${host}:3000/sq/value?path=${path}`
-                  );
-
-                  const { script, csv } = await response.json();
-
-                  setScript(script);
-                  setPath(path);
-                  setCsv(csv);
-                  setLoading(false);
+                  setSearchParams({ path });
                 }}
               >
                 {path}
@@ -53,13 +54,17 @@ export default function IndexPage() {
         </div>
         <div className="absolute left-1/4 w-3/4 h-full overflow-auto border-2 p-1 whitespace-pre break-words">
           {loading && <p>Loading...</p>}
-          {path && (
-            <p className="sticky top-0 backdrop-blur-sm font-bold py-2">
-              {path}
-            </p>
+          {!loading && (
+            <>
+              {path && (
+                <p className="sticky top-0 backdrop-blur-sm font-bold py-2">
+                  {path}
+                </p>
+              )}
+              {path && data.script && buildSQ(data.script, path)}
+              {path && data.csv && buildText(data.csv, path)}
+            </>
           )}
-          {script && buildSQ(script, path)}
-          {csv && buildText(csv, path)}
         </div>
       </section>
     </DefaultLayout>
@@ -72,14 +77,14 @@ type Props = {
   obj: any;
   tKey: string;
   path: string;
+  depth: number;
 };
 
 function ContentEditable(props: Props) {
-  const { index, id, obj, tKey, path } = props;
+  const { index, id, obj, tKey, path, depth } = props;
 
   return (
-    <>
-      <span> </span>
+    <div style={{ paddingLeft: depth * 40 + 5 }}>
       <span id={`${id}-${index}`}>✅</span>
       <span
         contentEditable
@@ -106,7 +111,7 @@ function ContentEditable(props: Props) {
             e.preventDefault();
             if (text != origin) {
               document.getElementById(key)!.innerText = "⌛";
-              const response = await fetch(`http://${host}:3000/sq/translate`, {
+              const response = await fetch(`${HOST}/sq/translate`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -132,7 +137,7 @@ function ContentEditable(props: Props) {
       >
         {obj.ko?.replace(/\n/g, "\\n") ?? "미번역"}
       </span>
-    </>
+    </div>
   );
 }
 
@@ -143,6 +148,7 @@ function buildText(obj: any, path: string) {
         <p className="pb-1 font-bold">{key}</p>
         <p> {value.en.replace(/\n/g, "\\n")}</p>
         <ContentEditable
+          depth={0}
           id="csv"
           index={i}
           obj={value}
@@ -167,55 +173,58 @@ function buildSQ(obj: any, path: string, depth?: number, meta?: any) {
 
   if (type == "cutscene") {
     output.push(
-      <p key={`cutscene-${depth}-${index}`}>{"\t".repeat(depth)}CUTSCENE</p>
+      <p key={`cutscene-${depth}-${index}`} style={{ paddingLeft: depth * 40 }}>
+        CUTSCENE
+      </p>,
     );
   } else if (type == "if") {
     output.push(
-      <p key={`if-${depth}-${index}`}>
-        {"\t".repeat(depth)}if {args.join(",")}
-      </p>
+      <p key={`if-${depth}-${index}`} style={{ paddingLeft: depth * 40 }}>
+        if {args.join(",")}
+      </p>,
     );
   } else if (type == "elseif") {
     output.push(
-      <p key={`elseif-${depth}-${index}`}>
-        {"\t".repeat(depth)}else if {args.join(",")}
-      </p>
+      <p key={`elseif-${depth}-${index}`} style={{ paddingLeft: depth * 40 }}>
+        else if {args.join(",")}
+      </p>,
     );
   } else if (type == "else") {
     output.push(
-      <p key={`else-${depth}-${index}`}>{"\t".repeat(depth ?? 0)}else</p>
+      <p key={`else-${depth}-${index}`} style={{ paddingLeft: depth * 40 }}>
+        else
+      </p>,
     );
   } else if (type == "wait") {
     output.push(
-      <p key={`wait-${depth}-${index}`}>
-        {"\t".repeat(depth ?? 0)}wait {args.join(",")}
-      </p>
+      <p key={`wait-${depth}-${index}`} style={{ paddingLeft: depth * 40 }}>
+        wait {args.join(",")}
+      </p>,
     );
   } else if (obj.directive) {
     output.push(
       <div key={`say-${depth}-${index}`} className="py-2">
-        <p className="pb-1 font-bold">
-          {"\t".repeat(depth)}
+        <p className="pb-1 font-bold" style={{ paddingLeft: depth * 40 }}>
           {obj.chara}
         </p>
-        <p>
-          {"\t".repeat(depth)} {obj.en.replace(/\n/g, "\\n")}
+        <p style={{ paddingLeft: depth * 40 + 5 }}>
+          {obj.en.replace(/\n/g, "\\n")}
         </p>
-        <p>
-          {"\t".repeat(depth)} {obj.ja.replace(/\n/g, "\\n")}
+        <p style={{ paddingLeft: depth * 40 + 5 }}>
+          {obj.ja.replace(/\n/g, "\\n")}
         </p>
-        <p>
-          {"\t".repeat(depth)} {obj["zh-CN"].replace(/\n/g, "\\n")}
+        <p style={{ paddingLeft: depth * 40 + 5 }}>
+          {obj["zh-CN"].replace(/\n/g, "\\n")}
         </p>
-        <span>{"\t".repeat(depth)}</span>
         <ContentEditable
+          depth={depth}
           id="say"
           index={index}
           obj={obj}
           path={path}
           tKey={obj.directive}
         />
-      </div>
+      </div>,
     );
   } else {
     depth--;
