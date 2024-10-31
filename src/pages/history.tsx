@@ -1,7 +1,8 @@
 import { useAsync } from "react-use";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardHeader, CardFooter } from "@nextui-org/card";
 import { useSearchParams } from "react-router-dom";
+import { Divider } from "@nextui-org/divider";
 
 import DefaultLayout from "@/layouts/default";
 
@@ -32,15 +33,21 @@ export default function HistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const path = searchParams.get("path");
 
-  useMemo(async () => {
-    setLoading(true);
+  useEffect(() => {
+    const fetchDiff = async () => {
+      setLoading(true);
 
-    const response = await fetch(`${HOST}/sq/diff?path=${path}`);
+      const response = await fetch(`${HOST}/sq/diff?path=${path}`);
 
-    const diff = await response.json();
+      const diff = await response.json();
 
-    setDiff(diff);
-    setLoading(false);
+      setDiff(diff);
+      setLoading(false);
+    };
+
+    if (path) {
+      fetchDiff();
+    }
   }, [path]);
 
   return (
@@ -51,10 +58,10 @@ export default function HistoryPage() {
           {(history &&
             history.map(({ path, editedDate, editor }, i) => (
               <Card
-                key={i}
+                key={path}
                 isPressable
                 className="block my-1"
-                onPress={async () => {
+                onPress={() => {
                   setSearchParams({ path });
                 }}
               >
@@ -62,7 +69,6 @@ export default function HistoryPage() {
                   <p className="font-bold">{path}</p>
                 </CardHeader>
 
-                {/* <Divider /> */}
                 <CardFooter className="flex flex-col items-start w-full">
                   <p>Last updated by {editor}</p>
                   <p>at {new Date(editedDate).toISOString()}</p>
@@ -91,6 +97,7 @@ export default function HistoryPage() {
                       </div>
                     );
                   })}
+                  <Divider />
                 </div>
               );
             })}
