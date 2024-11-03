@@ -15,6 +15,10 @@ type Remaining = {
   mrpg: Remain;
 };
 
+function getPercent(remain: Remain) {
+  return Math.round((1 - remain.remain / remain.total) * 100);
+}
+
 export default function RemainPage() {
   const { error: fetchError, value: remaining } = useAsync(async () => {
     const response = await fetch(`${HOST}/sq/remain`);
@@ -36,19 +40,13 @@ export default function RemainPage() {
             <>
               <p>
                 Main Story: {remaining.main.remain}/{remaining.main.total};{" "}
-                {Math.round(
-                  (remaining.main.remain / remaining.main.total) * 100,
-                )}
-                % Finished
+                {getPercent(remaining.main)}% Finished
               </p>
               <p>
                 Earthborn: {remaining.mrpg.remain}/{remaining.mrpg.total};{" "}
-                {Math.round(
-                  (remaining.mrpg.remain / remaining.mrpg.total) * 100,
-                )}
-                % Finished
+                {getPercent(remaining.mrpg)}% Finished
               </p>
-              <p>Octopia: 0/∞; ∞% Finished</p>
+              <p>Octopia: 0/∞; 0% Finished</p>
             </>
           )}
         </div>
