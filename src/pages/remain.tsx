@@ -38,15 +38,26 @@ export default function RemainPage() {
           {!remaining && <p>Loading...</p>}
           {remaining && (
             <>
-              <p>
-                Main Story: {remaining.main.remain}/{remaining.main.total};{" "}
-                {getPercent(remaining.main)}% Finished
-              </p>
-              <p>
-                Earthborn: {remaining.mrpg.remain}/{remaining.mrpg.total};{" "}
-                {getPercent(remaining.mrpg)}% Finished
-              </p>
-              <p>Octopia: 0/∞; 0% Finished</p>
+              <div>
+                <p> Main Story: </p>
+                <p> - Remain: {remaining.main.remain} Lines</p>
+                <p> - Total: {remaining.main.total} Lines</p>
+                <p> - {getPercent(remaining.main)}% Finished</p>
+              </div>
+              <br />
+              <div>
+                <p> Earthborn: </p>
+                <p> - Remain: {remaining.mrpg.remain} Lines</p>
+                <p> - Total: {remaining.mrpg.total} Lines</p>
+                <p> - {getPercent(remaining.mrpg)}% Finished</p>
+              </div>
+              <br />
+              <div>
+                <p> Octopia: </p>
+                <p> - Remain: ∞ Lines</p>
+                <p> - Total: ∞ Lines</p>
+                <p> - 0% Finished</p>
+              </div>
             </>
           )}
         </div>
