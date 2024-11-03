@@ -52,9 +52,9 @@ export default function HistoryPage() {
 
   return (
     <DefaultLayout>
-      <p>{fetchError?.message}</p>
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-2/5 h-full overflow-auto border-2 p-1">
+          <p>{fetchError?.message}</p>
           {(history &&
             history.map(({ path, editedDate, editor }) => (
               <Card

@@ -155,9 +155,9 @@ export default function IndexPage() {
 
   return (
     <DefaultLayout>
-      <p>{fetchError?.message}</p>
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-1/4 h-full overflow-auto border-2 p-1">
+          <p>{fetchError?.message}</p>
           <div className="z-20 sticky top-[-4px] bg-white dark:bg-black font-bold py-2">
             <RadioGroup
               className="pl-2"
