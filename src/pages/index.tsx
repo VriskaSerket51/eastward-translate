@@ -200,7 +200,7 @@ export default function IndexPage() {
           {!loading && (
             <>
               {path && (
-                <div className="sticky top-0 backdrop-blur-sm font-bold py-2">
+                <div className="sticky top-[-4px] backdrop-blur-sm font-bold py-2">
                   <p>
                     {status} {path}
                   </p>
