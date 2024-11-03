@@ -32,10 +32,10 @@ export default function RemainPage() {
     <DefaultLayout>
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-1/4 h-full overflow-auto border-2 p-1">
-          <p>{fetchError?.message}</p>
           <img alt="haha work" src={haha} />
         </div>
         <div className="absolute left-1/4 w-3/4 h-full overflow-auto border-2 p-1 whitespace-pre break-words">
+          <p>{fetchError?.message}</p>
           {!remaining && <p>Loading...</p>}
           {remaining && (
             <>

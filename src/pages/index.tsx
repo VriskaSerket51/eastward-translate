@@ -157,7 +157,6 @@ export default function IndexPage() {
     <DefaultLayout>
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-1/4 h-full overflow-auto border-2 p-1">
-          <p>{fetchError?.message}</p>
           <div className="z-20 sticky top-[-4px] bg-white dark:bg-black font-bold py-2">
             <RadioGroup
               className="pl-2"
@@ -178,6 +177,7 @@ export default function IndexPage() {
               <Radio value="dlc">Octopia</Radio>
             </RadioGroup>
           </div>
+          <p>{fetchError?.message}</p>
           {(filteredPath &&
             filteredPath.map((path) => (
               <Button
