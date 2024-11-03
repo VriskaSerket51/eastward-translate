@@ -5,13 +5,18 @@ import haha from "@/assets/img/haha.png";
 
 const HOST = import.meta.env.VITE_API_HOST || "http://localhost:3000";
 
+type Remain = {
+  total: number;
+  remain: number;
+};
+
 type Remaining = {
-  main: number;
-  mrpg: number;
+  main: Remain;
+  mrpg: Remain;
 };
 
 export default function RemainPage() {
-  const { error: fetchError, value: remain } = useAsync(async () => {
+  const { error: fetchError, value: remaining } = useAsync(async () => {
     const response = await fetch(`${HOST}/sq/remain`);
     const remain = (await response.json()) as Remaining;
 
@@ -26,11 +31,24 @@ export default function RemainPage() {
           <img alt="haha work" src={haha} />
         </div>
         <div className="absolute left-1/4 w-3/4 h-full overflow-auto border-2 p-1 whitespace-pre break-words">
-          {!remain && <p>Loading...</p>}
-          {remain && (
+          {!remaining && <p>Loading...</p>}
+          {remaining && (
             <>
-              <p>메인 스토리: {remain.main} 라인</p>
-              <p>대지의 아이: {remain.mrpg} 라인</p>
+              <p>
+                Main Story: {remaining.main.remain}/{remaining.main.total};{" "}
+                {Math.round(
+                  (remaining.main.remain / remaining.main.total) * 100,
+                )}
+                % Finished
+              </p>
+              <p>
+                Earthborn: {remaining.mrpg.remain}/{remaining.mrpg.total};{" "}
+                {Math.round(
+                  (remaining.mrpg.remain / remaining.mrpg.total) * 100,
+                )}
+                % Finished
+              </p>
+              <p>Octopia: 0/∞; ∞% Finished</p>
             </>
           )}
         </div>
