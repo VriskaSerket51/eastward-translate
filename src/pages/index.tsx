@@ -122,7 +122,6 @@ export default function IndexPage() {
           value,
         };
       }
-      // 상태 업데이트 최소화
       const hasTranslations = Object.keys(translationsRef.current).length > 0;
 
       setStatus(hasTranslations ? "❌" : "✅");
@@ -174,7 +173,7 @@ export default function IndexPage() {
               {path &&
                 data.script &&
                 buildSQ(data.script, filter, onContentChange)}
-              {path && data.csv && buildText(data.csv, onContentChange)}
+              {path && data.csv && buildText(data.csv, filter, onContentChange)}
             </>
           )}
         </div>
@@ -190,6 +189,10 @@ type Props = {
   onContentChange: OnContentChange;
 };
 
+function escape(locale?: any) {
+  return locale?.replace(/\n/g, "\\n") ?? "!!No Translation!!";
+}
+
 const ContentEditable = memo(function ContentEditable(props: Props) {
   const { obj, _key, depth, onContentChange } = props;
 
@@ -203,7 +206,7 @@ const ContentEditable = memo(function ContentEditable(props: Props) {
         onInput={(e) => {
           const text = (e.target as HTMLSpanElement).innerText;
 
-          const origin = obj.ko?.replace(/\n/g, "\\n") ?? "미번역";
+          const origin = escape(obj.ko);
 
           if (text != origin) {
             onContentChange(obj, _key, text);
@@ -212,24 +215,32 @@ const ContentEditable = memo(function ContentEditable(props: Props) {
           }
         }}
       >
-        {obj.ko?.replace(/\n/g, "\\n") ?? "미번역"}
+        {escape(obj.ko)}
       </span>
     </div>
   );
 });
 
-function buildText(obj: any, onContentChange: OnContentChange) {
+function buildText(
+  obj: any,
+  filter: string[],
+  onContentChange: OnContentChange,
+) {
   return Object.entries<any>(obj).map(([key, value], i) => {
     return (
       <div key={`csv-${i}`} className="py-2">
         <p className="pb-1 font-bold">{key}</p>
-        <p> {value.en.replace(/\n/g, "\\n")}</p>
-        <ContentEditable
-          _key={key}
-          depth={0}
-          obj={value}
-          onContentChange={onContentChange}
-        />
+        {filter.includes("en") && <p>{escape(value.en)}</p>}
+        {filter.includes("ja") && <p>{escape(value.ja)}</p>}
+        {filter.includes("zh-CN") && <p>{escape(value["zh-CN"])}</p>}
+        {filter.includes("ko") && (
+          <ContentEditable
+            _key={key}
+            depth={0}
+            obj={value}
+            onContentChange={onContentChange}
+          />
+        )}
       </div>
     );
   });
@@ -289,19 +300,13 @@ function buildSQ(
           {obj.chara}
         </p>
         {filter.includes("en") && (
-          <p style={{ paddingLeft: depth * 40 + 5 }}>
-            {obj.en.replace(/\n/g, "\\n")}
-          </p>
+          <p style={{ paddingLeft: depth * 40 + 5 }}>{escape(obj.en)}</p>
         )}
         {filter.includes("ja") && (
-          <p style={{ paddingLeft: depth * 40 + 5 }}>
-            {obj.ja.replace(/\n/g, "\\n")}
-          </p>
+          <p style={{ paddingLeft: depth * 40 + 5 }}>{escape(obj.ja)}</p>
         )}
         {filter.includes("zh-CN") && (
-          <p style={{ paddingLeft: depth * 40 + 5 }}>
-            {obj["zh-CN"].replace(/\n/g, "\\n")}
-          </p>
+          <p style={{ paddingLeft: depth * 40 + 5 }}>{escape(obj["zh-CN"])}</p>
         )}
         {filter.includes("ko") && (
           <ContentEditable
