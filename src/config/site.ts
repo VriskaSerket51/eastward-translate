@@ -12,6 +12,10 @@ export const siteConfig = {
       label: "Profile",
       href: "/profile",
     },
+    {
+      label: "Remain",
+      href: "/remain",
+    },
   ],
   navMenuItems: [
     {
@@ -21,6 +25,10 @@ export const siteConfig = {
     {
       label: "Profile",
       href: "/profile",
+    },
+    {
+      label: "Remain",
+      href: "/remain",
     },
   ],
 };
