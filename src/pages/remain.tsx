@@ -13,6 +13,7 @@ type Remain = {
 type Remaining = {
   main: Remain;
   mrpg: Remain;
+  dlc: Remain;
 };
 
 function getPercent(remain: Remain) {
@@ -54,9 +55,9 @@ export default function RemainPage() {
               <br />
               <div>
                 <p> Octopia: </p>
-                <p> - Remain: ∞ Lines</p>
-                <p> - Total: ∞ Lines</p>
-                <p> - 0% Finished</p>
+                <p> - Remain: {remaining.dlc.remain} Lines</p>
+                <p> - Total: {remaining.dlc.total} Lines</p>
+                <p> - {getPercent(remaining.dlc)}% Finished</p>
               </div>
             </>
           )}
