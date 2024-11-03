@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useSearchParams } from "react-router-dom";
+import { RadioGroup, Radio } from "@nextui-org/radio";
 
 import DefaultLayout from "@/layouts/default";
 import { getProfileName } from "@/util/name";
@@ -24,11 +25,15 @@ type Translation = {
 type OnContentChange = (obj: any, key: string, value: string | null) => void;
 
 export default function IndexPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = searchParams.get("view") || "main";
+  const path = searchParams.get("path");
+
   const { error: fetchError, value: paths } = useAsync(async () => {
     const response = await fetch(`${HOST}/sq/names`);
     const names = (await response.json()) as string[];
 
-    return names.filter((name) => !name.startsWith("farm"));
+    return names;
   }, []);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<{ script: any; csv: any }>({
@@ -37,8 +42,6 @@ export default function IndexPage() {
   });
   const [filter, setFilter] = useState(["en", "ja", "zh-CN", "ko"]);
   const [status, setStatus] = useState("✅");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const path = searchParams.get("path");
 
   const translationsRef = useRef<{
     [key: string]: Translation;
@@ -129,18 +132,63 @@ export default function IndexPage() {
     [],
   );
 
+  const filteredPath =
+    paths &&
+    paths.filter((name) => {
+      switch (view) {
+        case "main":
+          return (
+            !/.*mrpg.*/gi.test(name) &&
+            !/farm\/.*/gi.test(name) &&
+            !/.*demo.*/gi.test(name)
+          );
+        case "mrpg":
+          return /.*mrpg.*/gi.test(name) && !/.*demo.*/gi.test(name);
+        case "demo":
+          return /.*demo.*/gi.test(name);
+        case "dlc":
+          return /farm\/.*/gi.test(name) && !/.*demo.*/gi.test(name);
+        default:
+          return false;
+      }
+    });
+
   return (
     <DefaultLayout>
       <p>{fetchError?.message}</p>
       <section className="relative w-full h-full gap-4">
         <div className="absolute w-1/4 h-full overflow-auto border-2 p-1">
-          {(paths &&
-            paths.map((path) => (
+          <div className="z-20 sticky top-[-4px] bg-white dark:bg-black font-bold py-2">
+            <RadioGroup
+              className="pl-2"
+              orientation="horizontal"
+              size="sm"
+              value={view}
+              onValueChange={(view) => {
+                setSearchParams((prev) => {
+                  prev.set("view", view);
+
+                  return prev;
+                });
+              }}
+            >
+              <Radio value="main">Main Story</Radio>
+              <Radio value="mrpg">Earthborn</Radio>
+              <Radio value="demo">Demo</Radio>
+              <Radio value="dlc">Octopia</Radio>
+            </RadioGroup>
+          </div>
+          {(filteredPath &&
+            filteredPath.map((path) => (
               <Button
                 key={path}
                 className="block my-1"
                 onClick={() => {
-                  setSearchParams({ path });
+                  setSearchParams((prev) => {
+                    prev.set("path", path);
+
+                    return prev;
+                  });
                 }}
               >
                 {path}
