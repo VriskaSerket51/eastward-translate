@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardHeader, CardFooter } from "@nextui-org/card";
 import { useSearchParams } from "react-router-dom";
 import { Divider } from "@nextui-org/divider";
+import dayjs from "dayjs";
 
 import DefaultLayout from "@/layouts/default";
 
@@ -71,7 +72,7 @@ export default function HistoryPage() {
 
                 <CardFooter className="flex flex-col items-start w-full">
                   <p>Last updated by {editor}</p>
-                  <p>at {new Date(editedDate).toISOString()}</p>
+                  <p>at {dayjs(editedDate).format("YYYY-MM-DD HH:mm:ss")}</p>
                 </CardFooter>
               </Card>
             ))) || <p>Loading...</p>}
@@ -91,7 +92,9 @@ export default function HistoryPage() {
                     return (
                       <div key={`${key}-${editedDate}`} className="py-2">
                         <p className="font-bold">
-                          {editor ? `Edited by ${editor}` : "Original"}
+                          {editor
+                            ? `Edited by ${editor} at ${dayjs(editedDate).format("YYYY-MM-DD HH:mm:ss")}`
+                            : "Original"}
                         </p>
                         <p>{value}</p>
                       </div>
