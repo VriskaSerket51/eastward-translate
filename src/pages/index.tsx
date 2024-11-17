@@ -69,7 +69,7 @@ export default function IndexPage() {
               ([key, { value }]) => {
                 return {
                   key,
-                  value: value.replace(/\\n/g, "\n"),
+                  value,
                 };
               },
             ),
@@ -238,7 +238,7 @@ type Props = {
 };
 
 function escape(locale?: any) {
-  return locale?.replace(/\n/g, "\\n") ?? "!!No Translation!!";
+  return locale ?? "!!No Translation!!";
 }
 
 const ContentEditable = memo(function ContentEditable(props: Props) {
