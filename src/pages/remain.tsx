@@ -2,6 +2,7 @@ import { useAsync } from "react-use";
 
 import DefaultLayout from "@/layouts/default";
 import haha from "@/assets/img/haha.png";
+import { Link } from "@nextui-org/link";
 
 const HOST = import.meta.env.VITE_API_HOST || "http://localhost:3000";
 
@@ -16,6 +17,10 @@ type Remaining = {
   dlc: Remain;
 };
 
+type Detail = {
+  path: string;
+} & Remain;
+
 function getPercent(remain: Remain) {
   return Math.round((1 - remain.remain / remain.total) * 100);
 }
@@ -26,6 +31,13 @@ export default function RemainPage() {
     const remain = (await response.json()) as Remaining;
 
     return remain;
+  }, []);
+
+  const { value: detail } = useAsync(async () => {
+    const response = await fetch(`${HOST}/sq/remain/detail`);
+    const detail = (await response.json()) as Detail[];
+
+    return detail;
   }, []);
 
   return (
@@ -59,8 +71,28 @@ export default function RemainPage() {
                 <p> - Total: {remaining.dlc.total} Lines</p>
                 <p> - {getPercent(remaining.dlc)}% Finished</p>
               </div>
+              <br />
             </>
           )}
+          <details>
+            <summary>In Detail</summary>
+            {!detail && <p>Loading...</p>}
+            {detail &&
+              detail
+                .filter(({ remain }) => remain)
+                .map((detail) => {
+                  const { path, total, remain } = detail;
+
+                  return (
+                    <div key={path}>
+                      <Link href={`/?path=${path}`}>{path}</Link>
+                      <p> - Remain: {remain} Lines</p>
+                      <p> - Total: {total} Lines</p>
+                      <p> - {getPercent(detail)}% Finished</p>
+                    </div>
+                  );
+                })}
+          </details>
         </div>
       </section>
     </DefaultLayout>
