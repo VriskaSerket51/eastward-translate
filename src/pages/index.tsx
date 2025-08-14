@@ -345,7 +345,7 @@ function buildSQ(
     output.push(
       <div key={`say-${depth}-${index}`} className="py-2">
         <p className="pb-1 font-bold" style={{ paddingLeft: depth * 40 }}>
-          {obj.chara}
+          {obj.chara}{obj.chara != obj.chara_en && ` / ${obj.chara_en}`}
         </p>
         {filter.includes("en") && (
           <p style={{ paddingLeft: depth * 40 + 5 }}>{escape(obj.en)}</p>
