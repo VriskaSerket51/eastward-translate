@@ -1,50 +1,27 @@
 // originally written by @imoaazahmed
-
-import { useEffect, useMemo, useState } from "react";
-
-const ThemeProps = {
-  key: "theme",
-  light: "light",
-  dark: "dark",
-} as const;
-
-type Theme = typeof ThemeProps.light | typeof ThemeProps.dark;
-
-export const useTheme = (defaultTheme?: Theme) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const storedTheme = localStorage.getItem(ThemeProps.key) as Theme | null;
-
-    return storedTheme || (defaultTheme ?? ThemeProps.light);
-  });
-
-  const isDark = useMemo(() => {
-    return theme === ThemeProps.dark;
-  }, [theme]);
-
-  const isLight = useMemo(() => {
-    return theme === ThemeProps.light;
-  }, [theme]);
-
-  const _setTheme = (theme: Theme) => {
-    localStorage.setItem(ThemeProps.key, theme);
-    document.documentElement.classList.remove(
-      ThemeProps.light,
-      ThemeProps.dark,
-    );
-    document.documentElement.classList.add(theme);
-    setTheme(theme);
-  };
-
-  const setLightTheme = () => _setTheme(ThemeProps.light);
-
-  const setDarkTheme = () => _setTheme(ThemeProps.dark);
-
-  const toggleTheme = () =>
-    theme === ThemeProps.dark ? setLightTheme() : setDarkTheme();
-
+import { useEffect, useState } from "react";
+type Theme = "light" | "dark";
+export function useTheme(defaultTheme: Theme = "light") {
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    _setTheme(theme);
-  });
-
-  return { theme, isDark, isLight, setLightTheme, setDarkTheme, toggleTheme };
-};
+    const saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") setTheme(saved);
+    setReady(true);
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    localStorage.setItem("theme", theme);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.classList.toggle("light", theme === "light");
+  }, [theme, ready]);
+  return {
+    theme,
+    isDark: theme === "dark",
+    isLight: theme === "light",
+    setLightTheme: () => setTheme("light"),
+    setDarkTheme: () => setTheme("dark"),
+    toggleTheme: () =>
+      setTheme((value) => (value === "dark" ? "light" : "dark")),
+  };
+}

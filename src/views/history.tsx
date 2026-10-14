@@ -1,13 +1,12 @@
-import { useAsync } from "react-use";
+import { useResource } from "@/hooks/use-resource";
+import { request } from "@/api/client";
 import { useEffect, useState } from "react";
-import { Card, CardHeader, CardFooter } from "@nextui-org/card";
-import { useSearchParams } from "react-router-dom";
-import { Divider } from "@nextui-org/divider";
+import { Card, CardHeader, CardFooter } from "@heroui/card";
+import { useSearchParams } from "@/hooks/use-search-params";
+import { Divider } from "@heroui/divider";
 import dayjs from "dayjs";
 
 import DefaultLayout from "@/layouts/default";
-
-const HOST = import.meta.env.VITE_API_HOST || "http://localhost:3000";
 
 type History = {
   path: string;
@@ -23,38 +22,43 @@ type Diff = {
 };
 
 export default function HistoryPage() {
-  const { error: fetchError, value: history } = useAsync(async () => {
-    const response = await fetch(`${HOST}/sq/history`);
-    const history = (await response.json()) as History[];
-
-    return history;
-  }, []);
   const [loading, setLoading] = useState(false);
   const [diff, setDiff] = useState<{ [key: string]: Diff[] }>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const path = searchParams.get("path");
+  const lang = searchParams.get("lang") ?? "ko";
+  const { error: fetchError, value: history } = useResource<History[]>(
+    "/sq/history",
+    { lang },
+  );
 
   useEffect(() => {
-    const fetchDiff = async () => {
-      setLoading(true);
-
-      const response = await fetch(`${HOST}/sq/diff?path=${path}`);
-
-      const diff = await response.json();
-
-      setDiff(diff);
-      setLoading(false);
-    };
-
-    if (path) {
-      fetchDiff();
-    }
-  }, [path]);
+    const abort = new AbortController();
+    setDiff({});
+    if (!path) return;
+    setLoading(true);
+    request<Record<string, Diff[]>>(
+      "/sq/diff",
+      { signal: abort.signal },
+      { path, lang },
+    )
+      .then((value) => {
+        if (!abort.signal.aborted) setDiff(value);
+      })
+      .catch(() => {
+        if (!abort.signal.aborted) setDiff({});
+      })
+      .finally(() => {
+        if (!abort.signal.aborted) setLoading(false);
+      });
+    return () => abort.abort();
+  }, [path, lang]);
 
   return (
     <DefaultLayout>
-      <section className="relative w-full h-full gap-4">
-        <div className="absolute w-2/5 h-full overflow-auto border-2 p-1">
+      <section className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[2fr_3fr]">
+        <p className="font-bold lg:col-span-2">Language: {lang}</p>
+        <div className="min-h-60 max-h-72 overflow-auto rounded border border-default-300 p-2 lg:max-h-[calc(100vh-150px)]">
           <p>{fetchError?.message}</p>
           {(history &&
             history.map(({ path, editedDate, editor }) => (
@@ -63,7 +67,7 @@ export default function HistoryPage() {
                 isPressable
                 className="block my-1"
                 onPress={() => {
-                  setSearchParams({ path });
+                  setSearchParams({ path, lang });
                 }}
               >
                 <CardHeader>
@@ -77,7 +81,7 @@ export default function HistoryPage() {
               </Card>
             ))) || <p>Loading...</p>}
         </div>
-        <div className="absolute left-[40%] w-3/5 h-full overflow-auto border-2 p-1 whitespace-pre break-words">
+        <div className="min-h-60 min-w-0 overflow-auto rounded border border-default-300 p-3 whitespace-pre-wrap break-words">
           {loading && <p>Loading...</p>}
           {path && (
             <p className="sticky top-0 backdrop-blur-sm font-bold py-2">

@@ -1,27 +1,33 @@
-import { Link } from "@nextui-org/link";
+import { Link } from "@heroui/link";
 import {
-  Navbar as NextUINavbar,
+  Navbar as HeroUINavbar,
   NavbarBrand,
   NavbarContent,
   NavbarItem,
   NavbarMenuToggle,
   NavbarMenu,
   NavbarMenuItem,
-} from "@nextui-org/navbar";
+} from "@heroui/navbar";
 
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo } from "@/components/icons";
+import { useSearchParams } from "@/hooks/use-search-params";
 import { siteConfig } from "@/config/site";
 
 export const Navbar = () => {
+  const [params] = useSearchParams();
+  const href = (path: string) =>
+    params.has("lang")
+      ? path + "?" + new URLSearchParams({ lang: params.get("lang")! })
+      : path;
   return (
-    <NextUINavbar maxWidth="full" position="sticky">
+    <HeroUINavbar maxWidth="full" position="sticky">
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
         <NavbarBrand className="gap-3 max-w-fit">
           <Link
             className="flex justify-start items-center gap-1"
             color="foreground"
-            href="/"
+            href={href("/")}
           >
             <Logo size={24} />
             <p className="font-bold text-inherit">Eastward Translate</p>
@@ -33,7 +39,7 @@ export const Navbar = () => {
               <Link
                 className="data-[active=true]:text-primary data-[active=true]:font-medium"
                 color="foreground"
-                href={item.href}
+                href={href(item.href)}
               >
                 {item.label}
               </Link>
@@ -60,13 +66,13 @@ export const Navbar = () => {
         <div className="mx-4 mt-2 flex flex-col gap-2">
           {siteConfig.navMenuItems.map((item, index) => (
             <NavbarMenuItem key={`${item}-${index}`}>
-              <Link color="foreground" href={item.href} size="lg">
+              <Link color="foreground" href={href(item.href)} size="lg">
                 {item.label}
               </Link>
             </NavbarMenuItem>
           ))}
         </div>
       </NavbarMenu>
-    </NextUINavbar>
+    </HeroUINavbar>
   );
 };

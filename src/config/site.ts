@@ -1,34 +1,13 @@
-export type SiteConfig = typeof siteConfig;
-
 export const siteConfig = {
-  name: "Vite + NextUI",
-  description: "Make beautiful websites regardless of your design experience.",
+  name: "Eastward Translate",
+  description: "Eastward translation editor",
   navItems: [
-    {
-      label: "History",
-      href: "/history",
-    },
-    {
-      label: "Profile",
-      href: "/profile",
-    },
-    {
-      label: "Remain",
-      href: "/remain",
-    },
+    { label: "History", href: "/history" },
+    { label: "Profile", href: "/profile" },
+    { label: "Remain", href: "/remain" },
   ],
-  navMenuItems: [
-    {
-      label: "History",
-      href: "/history",
-    },
-    {
-      label: "Profile",
-      href: "/profile",
-    },
-    {
-      label: "Remain",
-      href: "/remain",
-    },
-  ],
+  get navMenuItems() {
+    return this.navItems;
+  },
 };
+export type SiteConfig = typeof siteConfig;

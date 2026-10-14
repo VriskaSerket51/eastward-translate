@@ -1,9 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@source "../../node_modules/@heroui/theme/dist";
 
 @font-face {
   font-family: "d2coding";
-  /* font-display: swap; */
-  src: url(/src/assets/fonts/d2coding.ttf) format("ttf");
+  font-display: swap;
+  src: url(../assets/fonts/d2coding.ttf) format("truetype");
 }

@@ -1,10 +1,10 @@
-import { useAsync } from "react-use";
+import { useResource } from "@/hooks/use-resource";
+import { useSearchParams } from "@/hooks/use-search-params";
+import { getPercent } from "@/util/translations";
 
 import DefaultLayout from "@/layouts/default";
-import haha from "@/assets/img/haha.png";
-import { Link } from "@nextui-org/link";
 
-const HOST = import.meta.env.VITE_API_HOST || "http://localhost:3000";
+import { Link } from "@heroui/link";
 
 type Remain = {
   total: number;
@@ -21,32 +21,25 @@ type Detail = {
   path: string;
 } & Remain;
 
-function getPercent(remain: Remain) {
-  return Math.round((1 - remain.remain / remain.total) * 100);
-}
-
 export default function RemainPage() {
-  const { error: fetchError, value: remaining } = useAsync(async () => {
-    const response = await fetch(`${HOST}/sq/remain`);
-    const remain = (await response.json()) as Remaining;
-
-    return remain;
-  }, []);
-
-  const { value: detail } = useAsync(async () => {
-    const response = await fetch(`${HOST}/sq/remain/detail`);
-    const detail = (await response.json()) as Detail[];
-
-    return detail;
-  }, []);
+  const [searchParams] = useSearchParams();
+  const lang = searchParams.get("lang") ?? "ko";
+  const { error: fetchError, value: remaining } = useResource<Remaining>(
+    "/sq/remain",
+    { lang },
+  );
+  const { value: detail } = useResource<Detail[]>("/sq/remain/detail", {
+    lang,
+  });
 
   return (
     <DefaultLayout>
-      <section className="relative w-full h-full gap-4">
-        <div className="absolute w-1/4 h-full overflow-auto border-2 p-1">
-          <img alt="haha work" src={haha} />
+      <section className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[2fr_3fr]">
+        <p className="font-bold lg:col-span-2">Language: {lang}</p>
+        <div className="overflow-auto rounded border border-default-300 p-2">
+          <img alt="haha work" src="/haha.png" />
         </div>
-        <div className="absolute left-1/4 w-3/4 h-full overflow-auto border-2 p-1 whitespace-pre break-words">
+        <div className="min-w-0 overflow-auto rounded border border-default-300 p-3 whitespace-pre-wrap break-words">
           <p>{fetchError?.message}</p>
           {!remaining && <p>Loading...</p>}
           {remaining && (
@@ -85,7 +78,9 @@ export default function RemainPage() {
 
                   return (
                     <div key={path}>
-                      <Link href={`/?path=${path}`}>{path}</Link>
+                      <Link href={`/?${new URLSearchParams({ path, lang })}`}>
+                        {path}
+                      </Link>
                       <p> - Remain: {remain} Lines</p>
                       <p> - Total: {total} Lines</p>
                       <p> - {getPercent(detail)}% Finished</p>

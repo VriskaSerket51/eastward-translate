@@ -1,5 +1,3 @@
-import { Link } from "@nextui-org/link";
-
 import { Navbar } from "@/components/navbar";
 
 export default function DefaultLayout({
@@ -8,20 +6,11 @@ export default function DefaultLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex flex-col h-screen">
+    <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="mx-auto w-full px-6 flex-grow pt-4">{children}</main>
-      <footer className="w-full flex items-center justify-center py-3">
-        <Link
-          isExternal
-          className="flex items-center gap-1 text-current"
-          href="https://nextui-docs-v2.vercel.app?utm_source=next-pages-template"
-          title="nextui.org homepage"
-        >
-          <span className="text-default-600">Powered by</span>
-          <p className="text-primary">NextUI</p>
-        </Link>
-      </footer>
+      <main className="flex min-h-0 w-full flex-1 flex-col px-3 py-4 sm:px-6">
+        {children}
+      </main>
     </div>
   );
 }
