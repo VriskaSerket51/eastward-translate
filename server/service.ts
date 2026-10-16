@@ -4,11 +4,11 @@ import { GameSources, type ScriptOutline } from "./game";
 export class TranslationService {
   constructor(public readonly store: TranslationStore, private readonly game?: GameSources) {}
   async value(path: string, target: string) {
-    if (!this.store.paths().includes(path)) throw new InputError("Unknown asset path", 404);
+    if (!(await this.store.paths()).includes(path)) throw new InputError("Unknown asset path", 404);
     const script = await this.game?.outline(path);
-    if (!script) return { csv: this.store.csv(path) };
-    const texts = this.store.csv(path);
-    const names = this.store.csv("config/story/CharacterName.xls/Name");
+    if (!script) return { csv: await this.store.csv(path) };
+    const texts = await this.store.csv(path);
+    const names = await this.store.csv("config/story/CharacterName.xls/Name");
     function overlay(node: ScriptOutline) {
       if (node.directive) {
         const translations = texts[node.directive];
@@ -35,14 +35,14 @@ export class TranslationService {
       const assetPath = () => { if (!path || path.length > 4096) throw new InputError("Asset path is required"); return path; };
       if (request.method === "GET") {
         switch (route) {
-          case "names": return json(this.store.paths());
-          case "languages": return json(this.store.languages());
+          case "names": return json(await this.store.paths());
+          case "languages": return json(await this.store.languages());
           case "value": return json(await this.value(assetPath(),target));
-          case "history": return json(this.store.history(target));
-          case "diff": return json(this.store.diff(assetPath(),target));
-          case "remain": return json(this.store.remaining(target).totals);
-          case "remain/detail": { const result = this.store.remaining(target); return json(url.searchParams.has("key") ? result.keys : result.paths); }
-          case "export": return json(this.store.export(target),200,{"Content-Disposition": `attachment; filename="eastward-${target}.json"`});
+          case "history": return json(await this.store.history(target));
+          case "diff": return json(await this.store.diff(assetPath(),target));
+          case "remain": return json((await this.store.remaining(target)).totals);
+          case "remain/detail": { const result = await this.store.remaining(target); return json(url.searchParams.has("key") ? result.keys : result.paths); }
+          case "export": return json(await this.store.export(target),200,{"Content-Disposition": `attachment; filename="eastward-${target}.json"`});
           default: return json({error:"Not found"},404);
         }
       }
@@ -52,7 +52,7 @@ export class TranslationService {
         let input;
         try { input = JSON.parse(body); } catch { throw new InputError("Invalid JSON"); }
         if (!input || typeof input !== "object" || Array.isArray(input)) throw new InputError("Invalid translation batch");
-        this.store.save(input.path,input.lang ?? target,input.editor,input.translations);
+        await this.store.save(input.path,input.lang ?? target,input.editor,input.translations);
         return json({});
       }
       return json({error:"Method not allowed"},405);
@@ -71,7 +71,7 @@ const state = globalThis as typeof globalThis & { translationService?: Promise<T
 export function getService() {
   return state.translationService ??= (async () => {
     const game = process.env.EASTWARD_GAME_ROOT ? await GameSources.open(process.env.EASTWARD_GAME_ROOT) : undefined;
-    const store = new TranslationStore(process.env.LOCALE_DB_PATH ?? "data/locale.db");
+    const store = await TranslationStore.open();
     return new TranslationService(store,game);
   })().catch(error => { delete state.translationService; throw error; });
 }

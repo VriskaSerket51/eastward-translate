@@ -38,7 +38,7 @@ export class GameSources {
         }
       }
     }
-    store.seed(rows);
+    await store.seed(rows);
     return rows.length;
   }
 }

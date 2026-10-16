@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Locale {
+  id         Int     @id @default(autoincrement())
+  path       String?
+  lang       String?
+  key        String?
+  value      String?
+  editedDate BigInt  @default(1726740805758)
+  editor     String?
+
+  @@index([path, lang, key, editedDate(sort: Desc), id(sort: Desc)], map: "locale_latest")
+  @@index([path, key], map: "locale_key")
+  @@map("locale")
+}
