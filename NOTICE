@@ -1,0 +1,9 @@
+Eastward Translate
+
+Application code: GPL-3.0-or-later, as declared in package.json. See LICENSE.
+The original NextUI template remains MIT; its copyright and full license are preserved in licenses/NextUI-template-MIT.txt.
+The eastward.js dependency is GPL-3.0-only. Combined distributions must use GPL version 3.
+Other npm dependencies retain their original licenses, provided with their installed packages.
+
+Source: https://github.com/VriskaSerket51/eastward-kr
+eastward.js: https://github.com/VriskaSerket51/eastward.js
