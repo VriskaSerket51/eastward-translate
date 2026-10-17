@@ -1,50 +1,58 @@
-# Vite & NextUI Template
+# Eastward Translate
 
-This is a template for creating applications using Vite and NextUI (v2).
+English | [한국어](README.ko.md)
 
-[Try it on CodeSandbox](https://githubbox.com/nextui-org/vite-template)
+A web editor for Eastward translations. Supports target languages beyond Korean.
 
-## Technologies Used
+## Requirements
 
-- [Vite](https://vitejs.dev/guide/)
-- [NextUI](https://nextui.org)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Tailwind Variants](https://tailwind-variants.org)
-- [TypeScript](https://www.typescriptlang.org)
-- [Framer Motion](https://www.framer.com/motion)
+- Node.js 24.13 or newer.
+- A sibling `eastward.js` checkout. Install its dependencies and build it first.
+- An Eastward installation to import the original text from.
 
-## How to Use
+## How to use
 
-To clone the project, run the following command:
+Create `.env` using `.env.example` as a reference.
 
-```bash
-git clone https://github.com/nextui-org/vite-template.git
-```
-
-### Install dependencies
-
-You can use one of them `npm`, `yarn`, `pnpm`, `bun`, Example using `npm`:
-
-```bash
-npm install
-```
-
-### Run the development server
-
-```bash
+```sh
+npm ci
+npm run db:deploy
+npm run locale:import -- "/path/to/Eastward"
 npm run dev
 ```
 
-### Setup pnpm (optional)
+Open [localhost:3000](http://localhost:3000).
 
-If you are using `pnpm`, you need to add the following code to your `.npmrc` file:
+### Data
 
-```bash
-public-hoist-pattern[]=*@nextui-org/*
+Translations are stored in `data/locale.db`. Set `LOCALE_DB_PATH` to use a different path. `DATABASE_URL` takes precedence if set.
+
+Back up an existing database before running `npm run db:deploy`. Use the same database path for imports and the web editor. Set `EASTWARD_GAME_ROOT` to display the original SQ structure as well.
+
+### Translation
+
+Enter the language code and press **Apply**. Edit the text, then save with **Save** or Ctrl/Cmd+S.
+
+Unsaved changes remain as browser drafts. If another editor's changes cause a conflict, reload the server text, compare it with your draft and save again.
+
+### Export
+
+Use **Export JSON** to export the target language.
+
+```json
+{"language":"ko","translations":[{"path":"asset/path","key":"message-id","value":"번역"}]}
 ```
 
-After modifying the `.npmrc` file, you need to run `pnpm install` again to ensure that the dependencies are installed correctly.
+Select the exported JSON in EastwardModTool's **Mod > Create language patch...** dialog. Package it with menus, images and fonts as an `.ewmod`. See the [language patch guide](https://github.com/VriskaSerket51/EastwardModLoader/blob/main/docs/language-patches.md) for details.
+
+## Production
+
+```sh
+npm run db:deploy
+npm run build
+npm start
+```
 
 ## License
 
-Licensed under the [MIT license](https://github.com/nextui-org/vite-template/blob/main/LICENSE).
+See [LICENSE](LICENSE).
