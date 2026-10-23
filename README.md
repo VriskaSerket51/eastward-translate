@@ -2,7 +2,7 @@
 
 English | [한국어](README.ko.md)
 
-A web editor for Eastward translations. Supports target languages beyond Korean.
+An unofficial web editor for Eastward translations. Supports target languages beyond Korean.
 
 ## Requirements
 
