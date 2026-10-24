@@ -4,11 +4,12 @@ import { GameSources, type ScriptOutline } from "./game";
 export class TranslationService {
   constructor(public readonly store: TranslationStore, private readonly game?: GameSources) {}
   async value(path: string, target: string) {
-    if (!(await this.store.paths()).includes(path)) throw new InputError("Unknown asset path", 404);
+    if (!(await this.store.hasPath(path))) throw new InputError("Unknown asset path", 404);
     const script = await this.game?.outline(path);
     if (!script) return { csv: await this.store.csv(path) };
-    const texts = await this.store.csv(path);
-    const names = await this.store.csv("config/story/CharacterName.xls/Name");
+    const [texts, names] = await Promise.all([
+      this.store.csv(path), this.store.csv("config/story/CharacterName.xls/Name"),
+    ]);
     function overlay(node: ScriptOutline) {
       if (node.directive) {
         const translations = texts[node.directive];
@@ -40,8 +41,15 @@ export class TranslationService {
           case "value": return json(await this.value(assetPath(),target));
           case "history": return json(await this.store.history(target));
           case "diff": return json(await this.store.diff(assetPath(),target));
-          case "remain": return json((await this.store.remaining(target)).totals);
-          case "remain/detail": { const result = await this.store.remaining(target); return json(url.searchParams.has("key") ? result.keys : result.paths); }
+          case "remain": {
+            const {totals,paths} = await this.store.remaining(target,false);
+            return json(url.searchParams.has("detail") ? {totals,paths} : totals);
+          }
+          case "remain/detail": {
+            const includeKeys = url.searchParams.has("key");
+            const result = await this.store.remaining(target,includeKeys);
+            return json(includeKeys ? result.keys : result.paths);
+          }
           case "export": return json(await this.store.export(target),200,{"Content-Disposition": `attachment; filename="eastward-${target}.json"`});
           default: return json({error:"Not found"},404);
         }

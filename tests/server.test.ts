@@ -107,3 +107,35 @@ test("concurrent stores reject a stale save and preserve millisecond timestamps 
     rmSync(directory,{recursive:true,force:true});
   }
 });
+
+test("progress summaries preserve latest nulls, empty translations and legacy response shapes", async () => {
+  const store = await TranslationStore.open(":memory:");
+  try {
+    await store.seed([
+      {path:"story.sq",lang:"en",key:"one",value:"one"},
+      {path:"story.sq",lang:"en",key:"two",value:"two"},
+      {path:"story.sq",lang:"fr",key:"one",value:"un"},
+      {path:"story.sq",lang:"ko",key:"one",value:"old"},
+      {path:"MRPG/story.sq",lang:"en",key:"one",value:"source"},
+      {path:"farm/story.sq",lang:"en",key:"one",value:"source"},
+      {path:"DEMO/story.sq",lang:"en",key:"one",value:"source"},
+    ]);
+    await store.save("story.sq","ko","tester",[{key:"one",value:null,expectedValue:"old"},{key:"two",value:"",expectedValue:null}]);
+    assert.equal(await store.hasPath("story.sq"),true);
+    assert.equal(await store.hasPath("missing"),false);
+    assert.deepEqual(await store.paths(),["DEMO/story.sq","MRPG/story.sq","farm/story.sq","story.sq"]);
+    assert.deepEqual(await store.languages(),["en","fr","ko"]);
+    const expected = await store.remaining("ko");
+    assert.deepEqual(expected.totals,{main:{total:2,remain:1},mrpg:{total:1,remain:1},dlc:{total:1,remain:1}});
+    assert.deepEqual(expected.keys["story.sq"],["one"]);
+    assert.deepEqual(await store.remaining("ko",false),{...expected,keys:Object.create(null)});
+    const untranslated = await store.remaining("de");
+    assert.deepEqual(untranslated.totals,{main:{total:2,remain:2},mrpg:{total:1,remain:1},dlc:{total:1,remain:1}});
+    const service = new TranslationService(store);
+    const get = async (route: string) => (await service.handle(new Request("http://localhost/sq/" + route))).json();
+    assert.deepEqual(await get("remain?lang=ko"),expected.totals);
+    assert.deepEqual(await get("remain/detail?lang=ko"),expected.paths);
+    assert.deepEqual(await get("remain/detail?lang=ko&key"),JSON.parse(JSON.stringify(expected.keys)));
+    assert.deepEqual(await get("remain?lang=ko&detail=1"),{totals:expected.totals,paths:expected.paths});
+  } finally { await store.close(); }
+});

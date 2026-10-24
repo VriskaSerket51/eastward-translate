@@ -24,13 +24,12 @@ type Detail = {
 export default function RemainPage() {
   const [searchParams] = useSearchParams();
   const lang = searchParams.get("lang") ?? "ko";
-  const { error: fetchError, value: remaining } = useResource<Remaining>(
-    "/sq/remain",
-    { lang },
-  );
-  const { value: detail } = useResource<Detail[]>("/sq/remain/detail", {
-    lang,
-  });
+  const { error: fetchError, value } = useResource<{
+    totals: Remaining;
+    paths: Detail[];
+  }>("/sq/remain", { lang, detail: "1" });
+  const remaining = value?.totals;
+  const detail = value?.paths;
 
   return (
     <DefaultLayout>

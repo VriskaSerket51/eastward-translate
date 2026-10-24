@@ -25,8 +25,8 @@ export class TranslationStore {
     return new TranslationStore(client, url === ":memory:" ? Symbol() : url);
   }
   close() { return this.db.$disconnect(); }
-  private async all<T>(query: Prisma.Sql): Promise<T[]> {
-    const rows = await this.db.$queryRaw<Record<string, unknown>[]>(query);
+  private async all<T>(query: Prisma.Sql, db: Pick<PrismaClient, "$queryRaw"> = this.db): Promise<T[]> {
+    const rows = await db.$queryRaw<Record<string, unknown>[]>(query);
     return rows.map(row => Object.fromEntries(Object.entries(row).map(([key,value]) => [key, typeof value === "bigint" ? Number(value) : value])) as T);
   }
   private async write<T>(action: (tx: Prisma.TransactionClient) => Promise<T>) {
@@ -48,13 +48,16 @@ export class TranslationStore {
     const where = conditions.length ? Prisma.sql` WHERE ${Prisma.join(conditions, " AND ")}` : Prisma.empty;
     return this.all<LocaleRow>(Prisma.sql`${ranked}${where}) SELECT id,path,lang,key,value,editedDate,editor FROM ranked WHERE rank=1 ORDER BY path,key,lang`);
   }
+  async hasPath(path: string): Promise<boolean> {
+    return await this.db.locale.findFirst({where:{path},select:{id:true}}) !== null;
+  }
   async paths(): Promise<string[]> {
-    const rows = await this.db.locale.findMany({ select: {path:true}, where: {path:{not:null}}, distinct: ["path"], orderBy: {path:"asc"} });
-    return rows.map(row => row.path!);
+    const rows = await this.all<{path:string}>(Prisma.sql`SELECT DISTINCT path FROM locale WHERE path IS NOT NULL ORDER BY path`);
+    return rows.map(row => row.path);
   }
   async languages(): Promise<string[]> {
-    const rows = await this.db.locale.findMany({ select: {lang:true}, where: {lang:{not:null}}, distinct: ["lang"], orderBy: {lang:"asc"} });
-    return rows.map(row => row.lang!);
+    const rows = await this.all<{lang:string}>(Prisma.sql`SELECT DISTINCT lang FROM locale WHERE lang IS NOT NULL ORDER BY lang`);
+    return rows.map(row => row.lang);
   }
   async csv(path: string): Promise<Record<string, Record<string, string | null>>> {
     const result: Record<string, Record<string, string | null>> = Object.create(null);
@@ -75,10 +78,13 @@ export class TranslationStore {
       if ("expectedValue" in change && change.expectedValue !== null && typeof change.expectedValue !== "string") throw new InputError("Invalid expected value");
       return change as Translation;
     });
+    if (!entries.length) return;
     await this.write(async tx => {
-      const keys = entries.map(entry => entry.key);
-      const known = new Set((await tx.locale.findMany({where:{path,key:{in:keys}},select:{key:true},distinct:["key"]})).map(row => row.key));
-      const rows = await tx.locale.findMany({where:{path,lang:target,key:{in:keys}},select:{key:true,value:true},orderBy:[{editedDate:"desc"},{id:"desc"}],distinct:["key"]});
+      const keys = Prisma.join(entries.map(entry => entry.key));
+      const known = new Set((await tx.$queryRaw<{key:string}[]>(Prisma.sql`SELECT DISTINCT key FROM locale WHERE path=${path} AND key IN (${keys})`)).map(row => row.key));
+      const rows = await tx.$queryRaw<{key:string;value:string|null}[]>(Prisma.sql`SELECT key,value FROM
+        (SELECT key,value,ROW_NUMBER() OVER(PARTITION BY key ORDER BY editedDate DESC,id DESC) rank
+          FROM locale WHERE path=${path} AND lang=${target} AND key IN (${keys})) WHERE rank=1`);
       const current = new Map(rows.map(row => [row.key,row.value]));
       const now = BigInt(Date.now());
       const data: Prisma.LocaleCreateManyInput[] = [];
@@ -93,7 +99,7 @@ export class TranslationStore {
   }
   async seed(rows: { path: string; lang: string; key: string; value: string | null }[]) {
     await this.write(async tx => {
-      const existing = await tx.locale.findMany({select:{path:true,lang:true,key:true},distinct:["path","lang","key"]});
+      const existing = await tx.$queryRaw<{path:string;lang:string;key:string}[]>`SELECT DISTINCT path,lang,key FROM locale`;
       const keys = new Set(existing.map(row => JSON.stringify([row.path,row.lang,row.key])));
       const data = rows.filter(row => {
         const key = JSON.stringify([row.path,row.lang,row.key]);
@@ -114,24 +120,32 @@ export class TranslationStore {
     for (const row of rows) { result[row.key] ??= []; result[row.key].push(row); }
     return result;
   }
-  async remaining(lang: string) {
-    // Every original key remains in the target count, even before that language has rows.
-    const rows = await this.all<{path:string;key:string;value:string|null}>(Prisma.sql`WITH original AS (SELECT DISTINCT path,key FROM locale),
-      target AS (SELECT *,ROW_NUMBER() OVER(PARTITION BY path,key ORDER BY editedDate DESC,id DESC) rank FROM locale WHERE lang=${lang})
-      SELECT o.path,o.key,t.value FROM original o LEFT JOIN target t ON o.path=t.path AND o.key=t.key AND t.rank=1 ORDER BY o.path,o.key`);
+  async remaining(lang: string, includeKeys = true) {
+    // Count each source key once, including languages with no translations yet.
+    const source = Prisma.sql`WITH original AS (SELECT DISTINCT path,key FROM locale)`;
+    const untranslated = Prisma.sql`(SELECT value FROM locale WHERE path=o.path AND lang=${lang} AND key=o.key
+      ORDER BY editedDate DESC,id DESC LIMIT 1) IS NULL`;
+    const summary = Prisma.sql`${source}
+      SELECT o.path,COUNT(*) total,SUM(CASE WHEN ${untranslated} THEN 1 ELSE 0 END) remain
+      FROM original o GROUP BY o.path ORDER BY o.path`;
+    const missing = Prisma.sql`${source}
+      SELECT o.path,o.key FROM original o WHERE ${untranslated} ORDER BY o.path,o.key`;
+    const [rows, untranslatedKeys] = includeKeys
+      ? await this.db.$transaction(tx => Promise.all([
+        this.all<{path:string;total:number;remain:number}>(summary,tx),
+        this.all<{path:string;key:string}>(missing,tx),
+      ]))
+      : [await this.all<{path:string;total:number;remain:number}>(summary), []] as const;
     const totals = { main: {total:0,remain:0}, mrpg: {total:0,remain:0}, dlc: {total:0,remain:0} };
-    const paths: Record<string,{path:string;total:number;remain:number}> = Object.create(null);
-    const keys: Record<string,string[]> = Object.create(null);
     for (const row of rows) {
-      const count = paths[row.path] ??= {path:row.path,total:0,remain:0};
-      count.total++;
-      if (row.value === null) { count.remain++; (keys[row.path] ??= []).push(row.key); }
       if (!row.path.includes("DEMO")) {
         const group = row.path.startsWith("farm/") ? totals.dlc : row.path.includes("MRPG") ? totals.mrpg : totals.main;
-        group.total++; if (row.value === null) group.remain++;
+        group.total += row.total; group.remain += row.remain;
       }
     }
-    return { totals, paths: Object.values(paths), keys };
+    const keys: Record<string,string[]> = Object.create(null);
+    for (const row of untranslatedKeys) (keys[row.path] ??= []).push(row.key);
+    return { totals, paths: rows, keys };
   }
   async export(lang: string) {
     return { language: lang, translations: (await this.latest(lang)).filter(row => row.value !== null).map(({path,key,value}) => ({path,key,value})) };

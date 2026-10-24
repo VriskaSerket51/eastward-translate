@@ -9,6 +9,8 @@ import {
 import { getProfileName } from "@/util/name";
 
 const STORAGE = "eastward-translate-drafts-v1";
+const EMPTY_DATA: TranslationData = {};
+const EMPTY_DRAFT: Draft = {};
 export function useTranslationEditor(path: string | null, language: string) {
   const context = JSON.stringify([path, language]);
   const drafts = useRef<Record<string, Draft>>({});
@@ -164,8 +166,8 @@ export function useTranslationEditor(path: string | null, language: string) {
   }, [save]);
   void revision;
   return {
-    data: loaded?.context === context ? loaded.data : {},
-    draft: drafts.current[context] ?? {},
+    data: loaded?.context === context ? loaded.data : EMPTY_DATA,
+    draft: drafts.current[context] ?? EMPTY_DRAFT,
     ready,
     loading,
     saving,

@@ -1,11 +1,16 @@
 import { Button } from "@heroui/button";
 import { CheckboxGroup, Checkbox } from "@heroui/checkbox";
 import { RadioGroup, Radio } from "@heroui/radio";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "@/hooks/use-search-params";
 import { useTranslationEditor } from "@/hooks/use-translation-editor";
 import { apiUrl, request } from "@/api/client";
-import { matchesView, rowsFromData, textValue } from "@/util/translations";
+import {
+  matchesView,
+  rowsFromData,
+  textValue,
+  type TranslationRow,
+} from "@/util/translations";
 import DefaultLayout from "@/layouts/default";
 
 export default function IndexPage() {
@@ -17,7 +22,6 @@ export default function IndexPage() {
   const [paths, setPaths] = useState<string[]>([]),
     [languages, setLanguages] = useState(["en", "ja", "zh-CN", "ko"]);
   const [filter, setFilter] = useState(["en", "ja", "zh-CN"]),
-    [search, setSearch] = useState(""),
     [listError, setListError] = useState("");
   const [target, setTarget] = useState(language);
   useEffect(() => {
@@ -36,52 +40,29 @@ export default function IndexPage() {
     return () => abort.abort();
   }, []);
   const rows = useMemo(() => rowsFromData(editor.data), [editor.data]);
-  const updateQuery = (key: string, value: string) =>
-    setSearchParams((previous) => {
-      previous.set(key, value);
-      return previous;
-    });
+  const updateQuery = useCallback(
+    (key: string, value: string) =>
+      setSearchParams((previous) => {
+        previous.set(key, value);
+        return previous;
+      }),
+    [setSearchParams],
+  );
   const count = Object.keys(editor.draft).length;
-  const visiblePaths = paths.filter(
-    (name) =>
-      matchesView(name, view) &&
-      name.toLowerCase().includes(search.toLowerCase()),
+  const comparedLanguages = useMemo(
+    () => filter.filter((lang) => lang !== language),
+    [filter, language],
   );
   return (
     <DefaultLayout>
       <section className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(220px,1fr)_3fr]">
-        <aside className="max-h-64 overflow-auto rounded border border-default-300 p-2 lg:max-h-[calc(100vh-110px)]">
-          <RadioGroup
-            orientation="horizontal"
-            size="sm"
-            value={view}
-            onValueChange={(value) => updateQuery("view", value)}
-          >
-            <Radio value="main">Main Story</Radio>
-            <Radio value="mrpg">Earthborn</Radio>
-            <Radio value="demo">Demo</Radio>
-            <Radio value="dlc">Octopia</Radio>
-          </RadioGroup>
-          <input
-            aria-label="Search paths"
-            className="my-2 w-full rounded border border-default-300 bg-transparent p-2"
-            placeholder="Search paths"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          {listError && <p role="alert">{listError}</p>}
-          {visiblePaths.map((name) => (
-            <Button
-              key={name}
-              fullWidth
-              variant={name === path ? "flat" : "light"}
-              className="my-1 h-auto min-h-10 justify-start whitespace-normal break-all text-left"
-              onPress={() => updateQuery("path", name)}
-            >
-              {name}
-            </Button>
-          ))}
-        </aside>
+        <TranslationFiles
+          paths={paths}
+          view={view}
+          path={path}
+          error={listError}
+          onSelect={updateQuery}
+        />
         <article className="min-w-0 overflow-auto rounded border border-default-300 p-3 lg:max-h-[calc(100vh-110px)]">
           <div className="sticky top-0 z-10 mb-3 space-y-2 bg-background/95 p-2 backdrop-blur-sm">
             <p className="break-all font-bold">
@@ -166,57 +147,133 @@ export default function IndexPage() {
           {editor.loading && <p>Loading...</p>}
           {!editor.loading &&
             rows.map((row, index) => (
-              <section
+              <TranslationEntry
                 key={row.key ?? `context-${index}`}
-                className="my-3 border-b border-default-200 pb-3"
-                style={{ marginLeft: Math.min(row.depth, 6) * 12 }}
-              >
-                <p className="font-bold">{row.label}</p>
-                {row.key && (
-                  <>
-                    <details className="text-xs text-default-500">
-                      <summary>Message ID</summary>
-                      {row.key}
-                    </details>
-                    {filter
-                      .filter((lang) => lang !== language)
-                      .map((lang) => (
-                        <p
-                          key={lang}
-                          dir="auto"
-                          className="whitespace-pre-wrap break-words"
-                        >
-                          <span className="text-xs text-default-500">
-                            {lang}:{" "}
-                          </span>
-                          {textValue(row, lang) || "(No translation)"}
-                        </p>
-                      ))}
-                    <textarea
-                      dir="auto"
-                      aria-label={`${language} ${row.key}`}
-                      className="mt-2 min-h-20 w-full rounded border border-default-300 bg-transparent p-2"
-                      value={
-                        Object.hasOwn(editor.draft, row.key)
-                          ? editor.draft[row.key]
-                          : textValue(row, language)
-                      }
-                      placeholder="No translation"
-                      disabled={!editor.ready}
-                      onChange={(event) =>
-                        editor.change(
-                          row.key!,
-                          event.target.value,
-                          textValue(row, language),
-                        )
-                      }
-                    />
-                  </>
-                )}
-              </section>
+                row={row}
+                language={language}
+                languages={comparedLanguages}
+                draft={
+                  row.key && Object.hasOwn(editor.draft, row.key)
+                    ? editor.draft[row.key]
+                    : undefined
+                }
+                disabled={!editor.ready}
+                onChange={editor.change}
+              />
             ))}
         </article>
       </section>
     </DefaultLayout>
   );
 }
+
+const TranslationFiles = memo(function TranslationFiles({
+  paths,
+  view,
+  path,
+  error,
+  onSelect,
+}: {
+  paths: string[];
+  view: string;
+  path: string | null;
+  error: string;
+  onSelect: (key: string, value: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const visiblePaths = useMemo(() => {
+    const query = search.toLowerCase();
+    return paths.filter(
+      (name) => matchesView(name, view) && name.toLowerCase().includes(query),
+    );
+  }, [paths, view, search]);
+  return (
+    <aside className="max-h-64 overflow-auto rounded border border-default-300 p-2 lg:max-h-[calc(100vh-110px)]">
+      <RadioGroup
+        orientation="horizontal"
+        size="sm"
+        value={view}
+        onValueChange={(value) => onSelect("view", value)}
+      >
+        <Radio value="main">Main Story</Radio>
+        <Radio value="mrpg">Earthborn</Radio>
+        <Radio value="demo">Demo</Radio>
+        <Radio value="dlc">Octopia</Radio>
+      </RadioGroup>
+      <input
+        aria-label="Search paths"
+        className="my-2 w-full rounded border border-default-300 bg-transparent p-2"
+        placeholder="Search paths"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
+      {error && <p role="alert">{error}</p>}
+      {visiblePaths.map((name) => (
+        <Button
+          key={name}
+          fullWidth
+          variant={name === path ? "flat" : "light"}
+          className="my-1 h-auto min-h-10 justify-start whitespace-normal break-all text-left"
+          onPress={() => onSelect("path", name)}
+        >
+          {name}
+        </Button>
+      ))}
+    </aside>
+  );
+});
+
+const TranslationEntry = memo(function TranslationEntry({
+  row,
+  language,
+  languages,
+  draft,
+  disabled,
+  onChange,
+}: {
+  row: TranslationRow;
+  language: string;
+  languages: string[];
+  draft: string | undefined;
+  disabled: boolean;
+  onChange: (key: string, value: string, original: string) => void;
+}) {
+  const original = textValue(row, language);
+  return (
+    <section
+      className="my-3 border-b border-default-200 pb-3"
+      style={{ marginLeft: Math.min(row.depth, 6) * 12 }}
+    >
+      <p className="font-bold">{row.label}</p>
+      {row.key && (
+        <>
+          <details className="text-xs text-default-500">
+            <summary>Message ID</summary>
+            {row.key}
+          </details>
+          {languages.map((lang) => (
+            <p
+              key={lang}
+              dir="auto"
+              className="whitespace-pre-wrap break-words"
+            >
+              <span className="text-xs text-default-500">{lang}: </span>
+              {textValue(row, lang) || "(No translation)"}
+            </p>
+          ))}
+          <textarea
+            dir="auto"
+            aria-label={`${language} ${row.key}`}
+            className="mt-2 min-h-20 w-full rounded border border-default-300 bg-transparent p-2"
+            value={draft ?? original}
+            placeholder="No translation"
+            disabled={disabled}
+            onChange={(event) =>
+              onChange(row.key!, event.target.value, original)
+            }
+          />
+        </>
+      )}
+    </section>
+  );
+});
