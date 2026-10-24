@@ -11,7 +11,8 @@ export default function ProfilePage() {
   }, []);
   return (
     <DefaultLayout>
-      <section className="max-w-lg space-y-3">
+      <section className="profile-panel space-y-5">
+        <h1 className="page-title">Profile</h1>
         <Input
           label="Your Name"
           value={name}

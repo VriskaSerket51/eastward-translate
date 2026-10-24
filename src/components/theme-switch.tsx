@@ -29,6 +29,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
     getInputProps,
     getWrapperProps,
   } = useSwitch({
+    "aria-label": "Toggle color theme",
     isSelected: theme === "light",
     onChange,
   });

@@ -55,7 +55,7 @@ export default function IndexPage() {
   );
   return (
     <DefaultLayout>
-      <section className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(220px,1fr)_3fr]">
+      <section className="translation-workspace">
         <TranslationFiles
           paths={paths}
           view={view}
@@ -63,14 +63,12 @@ export default function IndexPage() {
           error={listError}
           onSelect={updateQuery}
         />
-        <article className="min-w-0 overflow-auto rounded border border-default-300 p-3 lg:max-h-[calc(100vh-110px)]">
-          <div className="sticky top-0 z-10 mb-3 space-y-2 bg-background/95 p-2 backdrop-blur-sm">
-            <p className="break-all font-bold">
-              {path ?? "Select a file to translate."}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
+        <article className="translation-editor">
+          <div className="editor-toolbar">
+            <p className="editor-path">{path ?? "Translation editor"}</p>
+            <div className="editor-actions">
               <form
-                className="flex items-center gap-2"
+                className="language-form"
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (/^[A-Za-z][A-Za-z0-9_-]{0,31}$/.test(target))
@@ -81,7 +79,7 @@ export default function IndexPage() {
                 <input
                   id="target-language"
                   list="language-list"
-                  className="w-24 rounded border border-default-300 bg-transparent p-1"
+                  className="language-input"
                   value={target}
                   pattern="[A-Za-z][A-Za-z0-9_-]{0,31}"
                   required
@@ -106,17 +104,17 @@ export default function IndexPage() {
                 Save {count ? `(${count})` : ""}
               </Button>
               <a
-                className="rounded border border-default-300 px-3 py-1"
+                className="export-link"
                 href={apiUrl("/sq/export", { lang: language })}
                 download={`translations-${language}.json`}
               >
                 Export JSON
               </a>
-              <span role="status">
+              <span role="status" className="save-status">
                 {editor.saving
                   ? "Saving…"
                   : count
-                    ? "Unsaved changes · drafts kept in this browser"
+                    ? "Unsaved changes (drafts saved locally)"
                     : "Saved"}
               </span>
             </div>
@@ -139,12 +137,25 @@ export default function IndexPage() {
               <div role="alert" className="text-danger">
                 <p>{editor.error}</p>
                 <Button size="sm" onPress={editor.reload}>
-                  Reload server text · keep drafts
+                  Reload server text (keep drafts)
                 </Button>
               </div>
             )}
           </div>
-          {editor.loading && <p>Loading...</p>}
+          {!path && (
+            <div className="editor-empty">
+              <span aria-hidden="true" className="empty-symbol">
+                Aa
+              </span>
+              <h1>Select a file</h1>
+              <p>Choose a script from the file list to start translating.</p>
+            </div>
+          )}
+          {editor.loading && (
+            <p className="editor-loading" role="status">
+              Loading...
+            </p>
+          )}
           {!editor.loading &&
             rows.map((row, index) => (
               <TranslationEntry
@@ -188,8 +199,13 @@ const TranslationFiles = memo(function TranslationFiles({
     );
   }, [paths, view, search]);
   return (
-    <aside className="max-h-64 overflow-auto rounded border border-default-300 p-2 lg:max-h-[calc(100vh-110px)]">
+    <aside className="translation-files">
+      <div className="files-heading">
+        <h2>Files</h2>
+        <span>{visiblePaths.length}</span>
+      </div>
       <RadioGroup
+        label="Game"
         orientation="horizontal"
         size="sm"
         value={view}
@@ -202,18 +218,22 @@ const TranslationFiles = memo(function TranslationFiles({
       </RadioGroup>
       <input
         aria-label="Search paths"
-        className="my-2 w-full rounded border border-default-300 bg-transparent p-2"
-        placeholder="Search paths"
+        className="file-search"
+        placeholder="Find a file…"
         value={search}
         onChange={(event) => setSearch(event.target.value)}
       />
       {error && <p role="alert">{error}</p>}
+      {!error && paths.length > 0 && visiblePaths.length === 0 && (
+        <p className="files-empty">No matching files.</p>
+      )}
       {visiblePaths.map((name) => (
         <Button
           key={name}
           fullWidth
           variant={name === path ? "flat" : "light"}
-          className="my-1 h-auto min-h-10 justify-start whitespace-normal break-all text-left"
+          className="file-item"
+          aria-current={name === path ? "true" : undefined}
           onPress={() => onSelect("path", name)}
         >
           {name}
@@ -241,30 +261,26 @@ const TranslationEntry = memo(function TranslationEntry({
   const original = textValue(row, language);
   return (
     <section
-      className="my-3 border-b border-default-200 pb-3"
-      style={{ marginLeft: Math.min(row.depth, 6) * 12 }}
+      className="translation-entry"
+      style={{ paddingLeft: Math.min(row.depth, 6) * 8 }}
     >
-      <p className="font-bold">{row.label}</p>
+      <p className="entry-label">{row.label}</p>
       {row.key && (
         <>
-          <details className="text-xs text-default-500">
+          <details className="message-id">
             <summary>Message ID</summary>
             {row.key}
           </details>
           {languages.map((lang) => (
-            <p
-              key={lang}
-              dir="auto"
-              className="whitespace-pre-wrap break-words"
-            >
-              <span className="text-xs text-default-500">{lang}: </span>
+            <p key={lang} dir="auto" className="reference-text">
+              <span className="reference-language">{lang}: </span>
               {textValue(row, lang) || "(No translation)"}
             </p>
           ))}
           <textarea
             dir="auto"
             aria-label={`${language} ${row.key}`}
-            className="mt-2 min-h-20 w-full rounded border border-default-300 bg-transparent p-2"
+            className="translation-input"
             value={draft ?? original}
             placeholder="No translation"
             disabled={disabled}

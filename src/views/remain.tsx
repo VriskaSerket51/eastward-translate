@@ -33,58 +33,62 @@ export default function RemainPage() {
 
   return (
     <DefaultLayout>
-      <section className="flex min-h-0 flex-1 flex-col gap-3">
-        <p className="font-bold">Language: {lang}</p>
-        <div className="min-h-0 min-w-0 flex-1 overflow-auto rounded border border-default-300 p-3 whitespace-pre-wrap break-words">
-          <p>{fetchError?.message}</p>
-          {!remaining && <p>Loading...</p>}
-          {remaining && (
-            <>
-              <div>
-                <p> Main Story: </p>
-                <p> - Remain: {remaining.main.remain} Lines</p>
-                <p> - Total: {remaining.main.total} Lines</p>
-                <p> - {getPercent(remaining.main)}% Finished</p>
+      <section className="progress-page">
+        <header className="page-heading">
+          <h1>Translation progress</h1>
+          <span className="language-tag">{lang}</span>
+        </header>
+        {fetchError && (
+          <p role="alert" className="text-danger">
+            {fetchError.message}
+          </p>
+        )}
+        {!remaining && <p role="status">Loading...</p>}
+        {remaining && (
+          <div className="progress-cards">
+            {(
+              [
+                ["Main Story", remaining.main],
+                ["Earthborn", remaining.mrpg],
+                ["Octopia", remaining.dlc],
+              ] as const
+            ).map(([label, progress]) => (
+              <section className="progress-card" key={label}>
+                <h2>{label}</h2>
+                <p className="progress-number">
+                  {getPercent(progress)}
+                  <span>%</span>
+                </p>
+                <progress
+                  aria-label={`${label} translated`}
+                  value={progress.total - progress.remain}
+                  max={progress.total || 1}
+                />
+                <p>
+                  {progress.remain.toLocaleString()} remaining /{" "}
+                  {progress.total.toLocaleString()} lines
+                </p>
+              </section>
+            ))}
+          </div>
+        )}
+        <details className="progress-details" open>
+          <summary>Unfinished files</summary>
+          {!detail && <p>Loading...</p>}
+          {detail
+            ?.filter(({ remain }) => remain > 0)
+            .map((item) => (
+              <div className="progress-file" key={item.path}>
+                <Link
+                  href={`/?${new URLSearchParams({ path: item.path, lang })}`}
+                >
+                  {item.path}
+                </Link>
+                <span>{item.remain.toLocaleString()} remaining</span>
+                <span>{getPercent(item)}%</span>
               </div>
-              <br />
-              <div>
-                <p> Earthborn: </p>
-                <p> - Remain: {remaining.mrpg.remain} Lines</p>
-                <p> - Total: {remaining.mrpg.total} Lines</p>
-                <p> - {getPercent(remaining.mrpg)}% Finished</p>
-              </div>
-              <br />
-              <div>
-                <p> Octopia: </p>
-                <p> - Remain: {remaining.dlc.remain} Lines</p>
-                <p> - Total: {remaining.dlc.total} Lines</p>
-                <p> - {getPercent(remaining.dlc)}% Finished</p>
-              </div>
-              <br />
-            </>
-          )}
-          <details>
-            <summary>In Detail</summary>
-            {!detail && <p>Loading...</p>}
-            {detail &&
-              detail
-                .filter(({ remain }) => remain)
-                .map((detail) => {
-                  const { path, total, remain } = detail;
-
-                  return (
-                    <div key={path}>
-                      <Link href={`/?${new URLSearchParams({ path, lang })}`}>
-                        {path}
-                      </Link>
-                      <p> - Remain: {remain} Lines</p>
-                      <p> - Total: {total} Lines</p>
-                      <p> - {getPercent(detail)}% Finished</p>
-                    </div>
-                  );
-                })}
-          </details>
-        </div>
+            ))}
+        </details>
       </section>
     </DefaultLayout>
   );

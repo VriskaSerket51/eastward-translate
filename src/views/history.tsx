@@ -56,9 +56,12 @@ export default function HistoryPage() {
 
   return (
     <DefaultLayout>
-      <section className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[2fr_3fr]">
-        <p className="font-bold lg:col-span-2">Language: {lang}</p>
-        <div className="min-h-60 max-h-72 overflow-auto rounded border border-default-300 p-2 lg:max-h-[calc(100vh-150px)]">
+      <section className="history-page grid min-h-0 flex-1 gap-3 lg:grid-cols-[2fr_3fr]">
+        <header className="page-heading lg:col-span-2">
+          <h1>History</h1>
+          <span className="language-tag">{lang}</span>
+        </header>
+        <div className="history-list min-h-60 max-h-72 overflow-auto rounded border border-default-300 p-2 lg:max-h-[calc(100vh-150px)]">
           <p>{fetchError?.message}</p>
           {(history &&
             history.map(({ path, editedDate, editor }) => (
@@ -81,7 +84,7 @@ export default function HistoryPage() {
               </Card>
             ))) || <p>Loading...</p>}
         </div>
-        <div className="min-h-60 min-w-0 overflow-auto rounded border border-default-300 p-3 whitespace-pre-wrap break-words">
+        <div className="history-diff min-h-60 min-w-0 overflow-auto rounded border border-default-300 p-3 whitespace-pre-wrap break-words">
           {loading && <p>Loading...</p>}
           {path && (
             <p className="sticky top-0 backdrop-blur-sm font-bold py-2">
