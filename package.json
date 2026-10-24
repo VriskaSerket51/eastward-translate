@@ -1,5 +1,5 @@
 {
-  "name": "eastward-kr",
+  "name": "eastward-translate",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -21,11 +21,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VriskaSerket51/eastward-kr.git"
+    "url": "git+https://github.com/VriskaSerket51/eastward-translate.git"
   },
   "author": "IREVES",
   "license": "GPL-3.0-or-later",
-  "description": "Eastward kr translation WEB",
+  "description": "Web translation editor for Eastward.",
   "dependencies": {
     "@heroui/button": "2.2.32",
     "@heroui/card": "2.2.28",
