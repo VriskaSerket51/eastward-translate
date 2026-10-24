@@ -2,17 +2,14 @@
 
 English | [한국어](README.ko.md)
 
-An unofficial web editor for Eastward translations. Supports target languages beyond Korean.
+Unofficial translation editor for Eastward. Supports Korean and other languages.
 
-## Requirements
+## How to run
 
-- Node.js 24.13 or newer.
-- A sibling `eastward.js` checkout. Install its dependencies and build it first.
-- An Eastward installation to import the original text from.
-
-## How to use
-
-Create `.env` using `.env.example` as a reference.
+1. Install Node.js 24.13 or later.
+2. Build a sibling `eastward.js` checkout.
+3. Copy `.env.example` to `.env` and set the paths.
+4. Run the commands below.
 
 ```sh
 npm ci
@@ -23,27 +20,19 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000).
 
-### Data
+Translations are saved in `data/locale.db`. Use `LOCALE_DB_PATH` to change the path; `DATABASE_URL` takes priority. Import and edit using the same database. Back it up before `db:deploy`.
 
-Translations are stored in `data/locale.db`. Set `LOCALE_DB_PATH` to use a different path. `DATABASE_URL` takes precedence if set.
+Set `EASTWARD_GAME_ROOT` to browse the original SQ structure.
 
-Back up an existing database before running `npm run db:deploy`. Use the same database path for imports and the web editor. Set `EASTWARD_GAME_ROOT` to display the original SQ structure as well.
+## How to use
 
-### Translation
+1. Enter a language code and select `Apply`.
+2. Edit text and save with `Save` or Ctrl/Cmd+S.
+3. Use `Export JSON` to download translations.
 
-Enter the language code and press **Apply**. Edit the text, then save with **Save** or Ctrl/Cmd+S.
+Unsaved changes stay in browser drafts. If another edit causes a conflict, reload the server text and compare it with your draft before saving again.
 
-Unsaved changes remain as browser drafts. If another editor's changes cause a conflict, reload the server text, compare it with your draft and save again.
-
-### Export
-
-Use **Export JSON** to export the target language.
-
-```json
-{"language":"ko","translations":[{"path":"asset/path","key":"message-id","value":"번역"}]}
-```
-
-Select the exported JSON in EastwardModTool's **Mod > Create language patch...** dialog. Package it with menus, images and fonts as an `.ewmod`. See the [language patch guide](https://github.com/VriskaSerket51/EastwardModLoader/blob/main/docs/language-patches.md) for details.
+Import the JSON in EastwardModTool through `Mod > Create language patch...`. Menus, images and fonts can be included in the same mod. See the [language patch guide](https://github.com/VriskaSerket51/EastwardModLoader/blob/main/docs/language-patches.md).
 
 ## Production
 
@@ -53,6 +42,4 @@ npm run build
 npm start
 ```
 
-## License
-
-See [LICENSE](LICENSE).
+[License](LICENSE)
