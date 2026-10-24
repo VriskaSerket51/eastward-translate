@@ -10,7 +10,6 @@ import {
 } from "@heroui/navbar";
 
 import { ThemeSwitch } from "@/components/theme-switch";
-import { Logo } from "@/components/icons";
 import { useSearchParams } from "@/hooks/use-search-params";
 import { siteConfig } from "@/config/site";
 
@@ -29,7 +28,6 @@ export const Navbar = () => {
             color="foreground"
             href={href("/")}
           >
-            <Logo size={24} />
             <p className="font-bold text-inherit">Eastward Translate</p>
           </Link>
         </NavbarBrand>

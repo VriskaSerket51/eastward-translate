@@ -1,6 +1,10 @@
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
 import hooks from "eslint-plugin-react-hooks";
+import { createRequire } from "node:module";
+
+// Keep the linter on the compiler API it supports.
+const require = createRequire(new URL("./tools/eslint/package.json", import.meta.url));
+const tseslint = require("typescript-eslint");
 
 export default tseslint.config(
   { ignores: ["dist/**", "server-dist/**", "node_modules/**"] },

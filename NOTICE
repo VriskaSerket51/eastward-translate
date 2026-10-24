@@ -1,9 +1,12 @@
 Eastward Translate
 
 Application code: GPL-3.0-or-later, as declared in package.json. See LICENSE.
-The original NextUI template remains MIT; its copyright and full license are preserved in licenses/NextUI-template-MIT.txt.
-The eastward.js dependency is GPL-3.0-only. Combined distributions must use GPL version 3.
+The original NextUI template remains MIT; see licenses/NextUI-template-MIT.txt.
+The eastward.js dependency is MIT; see licenses/eastward.js-MIT.txt.
+D2Coding is licensed under the SIL Open Font License 1.1; see licenses/D2Coding-OFL-1.1.txt.
+Bundled font metadata: Copyright (c) 2015-2016 NHN Corporation. Font designed by FONTRIX Inc.
 Other npm dependencies retain their original licenses, provided with their installed packages.
 
 Source: https://github.com/VriskaSerket51/eastward-kr
 eastward.js: https://github.com/VriskaSerket51/eastward.js
+D2Coding: https://github.com/naver/d2-coding-font

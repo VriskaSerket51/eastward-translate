@@ -34,12 +34,9 @@ export default function RemainPage() {
 
   return (
     <DefaultLayout>
-      <section className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[2fr_3fr]">
-        <p className="font-bold lg:col-span-2">Language: {lang}</p>
-        <div className="overflow-auto rounded border border-default-300 p-2">
-          <img alt="haha work" src="/haha.png" />
-        </div>
-        <div className="min-w-0 overflow-auto rounded border border-default-300 p-3 whitespace-pre-wrap break-words">
+      <section className="flex min-h-0 flex-1 flex-col gap-3">
+        <p className="font-bold">Language: {lang}</p>
+        <div className="min-h-0 min-w-0 flex-1 overflow-auto rounded border border-default-300 p-3 whitespace-pre-wrap break-words">
           <p>{fetchError?.message}</p>
           {!remaining && <p>Loading...</p>}
           {remaining && (
