@@ -115,7 +115,7 @@ export class TranslationStore {
   }
   async diff(path: string, lang: string) {
     const rows = await this.all<LocaleRow>(Prisma.sql`SELECT id,path,lang,key,value,editedDate,editor FROM
-      (SELECT *,COUNT(*) OVER(PARTITION BY key) cnt FROM locale WHERE path=${path} AND lang=${lang}) WHERE cnt>1 ORDER BY key,editedDate DESC,id DESC`);
+      (SELECT *,COUNT(*) OVER(PARTITION BY key) cnt FROM locale WHERE path=${path} AND lang=${lang}) WHERE cnt>1 OR editor IS NOT NULL ORDER BY key,editedDate DESC,id DESC`);
     const result: Record<string, LocaleRow[]> = Object.create(null);
     for (const row of rows) { result[row.key] ??= []; result[row.key].push(row); }
     return result;

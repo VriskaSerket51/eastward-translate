@@ -139,3 +139,30 @@ test("progress summaries preserve latest nulls, empty translations and legacy re
     assert.deepEqual(await get("remain?lang=ko&detail=1"),{totals:expected.totals,paths:expected.paths});
   } finally { await store.close(); }
 });
+
+test("history API includes the first edit in a new language and preserves original versions", async () => {
+  const store = await TranslationStore.open(":memory:");
+  try {
+    await seed(store);
+    await store.seed([{path:"story/demo.sq",lang:"ko",key:"one",value:"원래 번역"}]);
+    const service = new TranslationService(store);
+    const get = async (route: string) => {
+      const response = await service.handle(new Request(`http://localhost/sq/${route}`));
+      assert.equal(response.status, 200);
+      return response.json();
+    };
+    assert.deepEqual(await get("history?lang=ko"), []);
+    await store.save("story/demo.sq", "ko", "translator", [{key:"one",value:"수정한 번역"}]);
+    await store.save("story/demo.sq", "x-test", "new-translator", [{key:"two",value:""}]);
+    const history = await get("history?lang=ko");
+    assert.equal(history[0].path, "story/demo.sq");
+    assert.equal(history[0].editor, "translator");
+    const diff = await get("diff?path=story%2Fdemo.sq&lang=ko");
+    assert.deepEqual(diff.one.map((row: {value:string}) => row.value), ["수정한 번역", "원래 번역"]);
+    const firstEdit = await get("diff?path=story%2Fdemo.sq&lang=x-test");
+    assert.equal(firstEdit.two.length, 1);
+    assert.equal(firstEdit.two[0].value, "");
+    assert.equal(firstEdit.two[0].editor, "new-translator");
+    assert.deepEqual(await get("diff?path=story%2Fdemo.sq&lang=en"), {});
+  } finally { await store.close(); }
+});
