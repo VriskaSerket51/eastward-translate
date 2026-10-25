@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useResource } from "@/hooks/use-resource";
 import { useSearchParams } from "@/hooks/use-search-params";
 import { getPercent } from "@/util/translations";
@@ -22,6 +23,8 @@ type Detail = {
 } & Remain;
 
 export default function RemainPage() {
+  const t = useTranslations("Progress");
+  const c = useTranslations("Common");
   const [searchParams] = useSearchParams();
   const lang = searchParams.get("lang") ?? "ko";
   const { error: fetchError, value } = useResource<{
@@ -35,7 +38,7 @@ export default function RemainPage() {
     <DefaultLayout>
       <section className="progress-page">
         <header className="page-heading">
-          <h1>Translation progress</h1>
+          <h1>{t("title")}</h1>
           <span className="language-tag">{lang}</span>
         </header>
         {fetchError && (
@@ -43,14 +46,14 @@ export default function RemainPage() {
             {fetchError.message}
           </p>
         )}
-        {!remaining && <p role="status">Loading...</p>}
+        {!remaining && <p role="status">{c("loading")}</p>}
         {remaining && (
           <div className="progress-cards">
             {(
               [
-                ["Main Story", remaining.main],
-                ["Earthborn", remaining.mrpg],
-                ["Octopia", remaining.dlc],
+                [c("main"), remaining.main],
+                [c("mrpg"), remaining.mrpg],
+                [c("dlc"), remaining.dlc],
               ] as const
             ).map(([label, progress]) => (
               <section className="progress-card" key={label}>
@@ -60,21 +63,23 @@ export default function RemainPage() {
                   <span>%</span>
                 </p>
                 <progress
-                  aria-label={`${label} translated`}
+                  aria-label={t("translated", { label })}
                   value={progress.total - progress.remain}
                   max={progress.total || 1}
                 />
                 <p>
-                  {progress.remain.toLocaleString()} remaining /{" "}
-                  {progress.total.toLocaleString()} lines
+                  {t("summary", {
+                    remaining: progress.remain,
+                    total: progress.total,
+                  })}
                 </p>
               </section>
             ))}
           </div>
         )}
         <details className="progress-details" open>
-          <summary>Unfinished files</summary>
-          {!detail && <p>Loading...</p>}
+          <summary>{t("unfinished")}</summary>
+          {!detail && <p>{c("loading")}</p>}
           {detail
             ?.filter(({ remain }) => remain > 0)
             .map((item) => (
@@ -84,7 +89,7 @@ export default function RemainPage() {
                 >
                   {item.path}
                 </Link>
-                <span>{item.remain.toLocaleString()} remaining</span>
+                <span>{t("remaining", { count: item.remain })}</span>
                 <span>{getPercent(item)}%</span>
               </div>
             ))}

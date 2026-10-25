@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { request } from "@/api/client";
 import {
@@ -12,6 +13,7 @@ const STORAGE = "eastward-translate-drafts-v1";
 const EMPTY_DATA: TranslationData = {};
 const EMPTY_DRAFT: Draft = {};
 export function useTranslationEditor(path: string | null, language: string) {
+  const t = useTranslations("Editor");
   const context = JSON.stringify([path, language]);
   const drafts = useRef<Record<string, Draft>>({});
   const [ready, setReady] = useState(false);
@@ -46,12 +48,10 @@ export function useTranslationEditor(path: string | null, language: string) {
     try {
       localStorage.setItem(STORAGE, JSON.stringify(drafts.current));
     } catch {
-      setError(
-        "브라우저에 임시 저장하지 못했습니다. 저장 또는 JSON 내보내기를 사용하세요.",
-      );
+      setError(t("storageError"));
     }
     setRevision((value) => value + 1);
-  }, []);
+  }, [t]);
   useEffect(() => {
     if (!path) return;
     const abort = new AbortController();

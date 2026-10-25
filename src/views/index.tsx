@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Button } from "@heroui/button";
 import { CheckboxGroup, Checkbox } from "@heroui/checkbox";
 import { RadioGroup, Radio } from "@heroui/radio";
@@ -14,6 +15,8 @@ import {
 import DefaultLayout from "@/layouts/default";
 
 export default function IndexPage() {
+  const t = useTranslations("Editor");
+  const c = useTranslations("Common");
   const [searchParams, setSearchParams] = useSearchParams();
   const path = searchParams.get("path"),
     view = searchParams.get("view") ?? "main",
@@ -65,7 +68,7 @@ export default function IndexPage() {
         />
         <article className="translation-editor">
           <div className="editor-toolbar">
-            <p className="editor-path">{path ?? "Translation editor"}</p>
+            <p className="editor-path">{path ?? t("title")}</p>
             <div className="editor-actions">
               <form
                 className="language-form"
@@ -75,7 +78,7 @@ export default function IndexPage() {
                     updateQuery("lang", target);
                 }}
               >
-                <label htmlFor="target-language">Target language</label>
+                <label htmlFor="target-language">{t("target")}</label>
                 <input
                   id="target-language"
                   list="language-list"
@@ -91,7 +94,7 @@ export default function IndexPage() {
                   ))}
                 </datalist>
                 <Button size="sm" type="submit">
-                  Apply
+                  {t("apply")}
                 </Button>
               </form>
               <Button
@@ -101,21 +104,21 @@ export default function IndexPage() {
                 isDisabled={!editor.ready || !count || editor.loading}
                 onPress={() => void editor.save()}
               >
-                Save {count ? `(${count})` : ""}
+                {c("save")} {count ? `(${count})` : ""}
               </Button>
               <a
                 className="export-link"
                 href={apiUrl("/sq/export", { lang: language })}
                 download={`translations-${language}.json`}
               >
-                Export JSON
+                {t("export")}
               </a>
               <span role="status" className="save-status">
                 {editor.saving
-                  ? "Saving…"
+                  ? t("saving")
                   : count
-                    ? "Unsaved changes (drafts saved locally)"
-                    : "Saved"}
+                    ? t("unsaved")
+                    : c("saved")}
               </span>
             </div>
             <CheckboxGroup
@@ -123,7 +126,7 @@ export default function IndexPage() {
               size="sm"
               value={filter}
               onValueChange={setFilter}
-              label="Compare languages"
+              label={t("compare")}
             >
               {languages
                 .filter((lang) => lang !== language)
@@ -137,7 +140,7 @@ export default function IndexPage() {
               <div role="alert" className="text-danger">
                 <p>{editor.error}</p>
                 <Button size="sm" onPress={editor.reload}>
-                  Reload server text (keep drafts)
+                  {t("reload")}
                 </Button>
               </div>
             )}
@@ -147,13 +150,13 @@ export default function IndexPage() {
               <span aria-hidden="true" className="empty-symbol">
                 Aa
               </span>
-              <h1>Select a file</h1>
-              <p>Choose a script from the file list to start translating.</p>
+              <h1>{t("selectFile")}</h1>
+              <p>{t("selectHint")}</p>
             </div>
           )}
           {editor.loading && (
             <p className="editor-loading" role="status">
-              Loading...
+              {c("loading")}
             </p>
           )}
           {!editor.loading &&
@@ -191,6 +194,8 @@ const TranslationFiles = memo(function TranslationFiles({
   error: string;
   onSelect: (key: string, value: string) => void;
 }) {
+  const t = useTranslations("Editor");
+  const c = useTranslations("Common");
   const [search, setSearch] = useState("");
   const visiblePaths = useMemo(() => {
     const query = search.toLowerCase();
@@ -201,31 +206,31 @@ const TranslationFiles = memo(function TranslationFiles({
   return (
     <aside className="translation-files">
       <div className="files-heading">
-        <h2>Files</h2>
+        <h2>{t("files")}</h2>
         <span>{visiblePaths.length}</span>
       </div>
       <RadioGroup
-        label="Game"
+        label={t("game")}
         orientation="horizontal"
         size="sm"
         value={view}
         onValueChange={(value) => onSelect("view", value)}
       >
-        <Radio value="main">Main Story</Radio>
-        <Radio value="mrpg">Earthborn</Radio>
-        <Radio value="demo">Demo</Radio>
-        <Radio value="dlc">Octopia</Radio>
+        <Radio value="main">{c("main")}</Radio>
+        <Radio value="mrpg">{c("mrpg")}</Radio>
+        <Radio value="demo">{c("demo")}</Radio>
+        <Radio value="dlc">{c("dlc")}</Radio>
       </RadioGroup>
       <input
-        aria-label="Search paths"
+        aria-label={t("search")}
         className="file-search"
-        placeholder="Find a file…"
+        placeholder={t("find")}
         value={search}
         onChange={(event) => setSearch(event.target.value)}
       />
       {error && <p role="alert">{error}</p>}
       {!error && paths.length > 0 && visiblePaths.length === 0 && (
-        <p className="files-empty">No matching files.</p>
+        <p className="files-empty">{c("noMatchingFiles")}</p>
       )}
       {visiblePaths.map((name) => (
         <Button
@@ -258,6 +263,8 @@ const TranslationEntry = memo(function TranslationEntry({
   disabled: boolean;
   onChange: (key: string, value: string, original: string) => void;
 }) {
+  const t = useTranslations("Editor");
+  const c = useTranslations("Common");
   const original = textValue(row, language);
   return (
     <section
@@ -268,13 +275,13 @@ const TranslationEntry = memo(function TranslationEntry({
       {row.key && (
         <>
           <details className="message-id">
-            <summary>Message ID</summary>
+            <summary>{t("messageId")}</summary>
             {row.key}
           </details>
           {languages.map((lang) => (
             <p key={lang} dir="auto" className="reference-text">
               <span className="reference-language">{lang}: </span>
-              {textValue(row, lang) || "(No translation)"}
+              {textValue(row, lang) || c("noTranslation")}
             </p>
           ))}
           <textarea
@@ -282,7 +289,7 @@ const TranslationEntry = memo(function TranslationEntry({
             aria-label={`${language} ${row.key}`}
             className="translation-input"
             value={draft ?? original}
-            placeholder="No translation"
+            placeholder={t("placeholder")}
             disabled={disabled}
             onChange={(event) =>
               onChange(row.key!, event.target.value, original)

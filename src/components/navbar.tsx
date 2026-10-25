@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+import { LanguageSwitch } from "@/components/language-switch";
 import { usePathname } from "next/navigation";
 import { Link } from "@heroui/link";
 import {
@@ -15,6 +17,7 @@ import { useSearchParams } from "@/hooks/use-search-params";
 import { siteConfig } from "@/config/site";
 
 export const Navbar = () => {
+  const t = useTranslations("Nav");
   const [params] = useSearchParams();
   const pathname = usePathname();
   const href = (path: string) =>
@@ -42,7 +45,7 @@ export const Navbar = () => {
                 color="foreground"
                 href={href(item.href)}
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             </NavbarItem>
           ))}
@@ -50,12 +53,18 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent className="basis-1 gap-4" justify="end">
+        <div className="hidden sm:block">
+          <LanguageSwitch />
+        </div>
         <ThemeSwitch />
-        <NavbarMenuToggle className="sm:hidden" />
+        <NavbarMenuToggle className="sm:hidden" aria-label={t("menu")} />
       </NavbarContent>
 
       <NavbarMenu>
         <div className="mx-4 mt-2 flex flex-col gap-2">
+          <NavbarMenuItem className="sm:hidden">
+            <LanguageSwitch />
+          </NavbarMenuItem>
           {siteConfig.navMenuItems.map((item, index) => (
             <NavbarMenuItem key={`${item}-${index}`}>
               <Link
@@ -64,7 +73,7 @@ export const Navbar = () => {
                 size="lg"
                 aria-current={pathname === item.href ? "page" : undefined}
               >
-                {item.label}
+                {t(item.label)}
               </Link>
             </NavbarMenuItem>
           ))}

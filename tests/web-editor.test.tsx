@@ -1,3 +1,4 @@
+import { EnglishUi } from "./web-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { useTranslationEditor } from "../src/hooks/use-translation-editor";
@@ -54,6 +55,7 @@ describe("translation data", () => {
       ),
     );
     const hook = renderHook(({ path }) => useTranslationEditor(path, "ko"), {
+      wrapper: EnglishUi,
       initialProps: { path: "first" },
     });
     await waitFor(() => expect(hook.result.current.loading).toBe(false));
@@ -94,6 +96,7 @@ describe("translation data", () => {
       ),
     );
     const hook = renderHook(({ path }) => useTranslationEditor(path, "fr"), {
+      wrapper: EnglishUi,
       initialProps: { path: "first" },
     });
     hook.rerender({ path: "second" });
@@ -124,7 +127,9 @@ describe("translation data", () => {
         ),
       ),
     );
-    const hook = renderHook(() => useTranslationEditor("test", "ko"));
+    const hook = renderHook(() => useTranslationEditor("test", "ko"), {
+      wrapper: EnglishUi,
+    });
     await waitFor(() => expect(hook.result.current.data.csv).toBeDefined());
     act(() => hook.result.current.change("key", "", "old"));
     await act(async () => hook.result.current.save());

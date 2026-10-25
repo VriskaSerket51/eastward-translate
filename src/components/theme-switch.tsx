@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { FC, useState, useEffect } from "react";
 import { VisuallyHidden } from "@react-aria/visually-hidden";
 import { SwitchProps, useSwitch } from "@heroui/switch";
@@ -15,6 +16,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
   className,
   classNames,
 }) => {
+  const t = useTranslations("Nav");
   const [isMounted, setIsMounted] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
@@ -29,7 +31,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
     getInputProps,
     getWrapperProps,
   } = useSwitch({
-    "aria-label": "Toggle color theme",
+    "aria-label": t("theme"),
     isSelected: theme === "light",
     onChange,
   });

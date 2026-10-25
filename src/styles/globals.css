@@ -684,3 +684,26 @@ progress::-moz-progress-bar {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.ui-language-select {
+  max-width: 110px;
+  min-width: 78px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  padding: 6px 8px;
+  font-size: 12px;
+}
+@media (max-width: 639px) {
+  .workspace-nav header {
+    gap: 8px;
+  }
+  .workspace-nav .brand-name {
+    font-size: 14px;
+  }
+  .workspace-nav .brand-name::before {
+    margin-right: 6px;
+  }
+  .workspace-nav [data-justify="end"] {
+    gap: 10px;
+  }
+}

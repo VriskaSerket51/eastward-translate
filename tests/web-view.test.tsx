@@ -1,12 +1,7 @@
+import { render } from "./web-render";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import IndexPage from "../src/views/index";
 import { matchesView, textValue } from "../src/util/translations";
 
